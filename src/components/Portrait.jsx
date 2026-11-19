@@ -45,7 +45,25 @@ export default function Portrait({ step = 6, className = '' }) {
       off.width = cols
       off.height = rows
       const octx = off.getContext('2d', { willReadFrequently: true })
-      octx.drawImage(img, sx, sy, sw, sh, 0, 0, cols, rows)
+      // progressive halving = proper area-averaging in every engine (one-step downscales alias in WebKit)
+      let src = img, srcX = sx, srcY = sy, w = sw, h = sh
+      while (w / 2 > cols * 1.5) {
+        const nw = Math.round(w / 2)
+        const nh = Math.round(h / 2)
+        const tmp = document.createElement('canvas')
+        tmp.width = nw
+        tmp.height = nh
+        const tctx = tmp.getContext('2d')
+        tctx.imageSmoothingQuality = 'high'
+        tctx.drawImage(src, srcX, srcY, w, h, 0, 0, nw, nh)
+        src = tmp
+        srcX = 0
+        srcY = 0
+        w = nw
+        h = nh
+      }
+      octx.imageSmoothingQuality = 'high'
+      octx.drawImage(src, srcX, srcY, w, h, 0, 0, cols, rows)
       const data = octx.getImageData(0, 0, cols, rows).data
 
       dots = []
@@ -79,7 +97,9 @@ export default function Portrait({ step = 6, className = '' }) {
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           const k = r * cols + c
-          let lum = L[k] + 1.35 * (L[k] - B[k]) // sharpen
+          // sharpen mid/dark tones only — sharpening pale background would print halo lines
+          const amt = 1.35 * (1 - smooth(0.55, 0.85, L[k]))
+          let lum = L[k] + amt * (L[k] - B[k])
           lum = Math.min(1, Math.max(0, (lum - 0.05) / 0.78)) // levels: pale walls drop to paper
           // soft oval vignette keeps the eye on the face and fades busy corners
           const ex = (c / cols - 0.5) / 0.6

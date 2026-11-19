@@ -7,6 +7,9 @@ import '@fontsource-variable/martian-mono/standard.css'
 import '@fontsource-variable/fraunces/wght-italic.css'
 import './styles/base.css'
 import App from './App.jsx'
+import { checkVariableFonts } from './lib/fontcheck'
+
+checkVariableFonts()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

@@ -18,7 +18,6 @@
   border-top: 1px solid var(--line);
   color: var(--mute);
 }
-.footer__hint kbd { margin: 0 2px; }
 .footer__top { color: var(--bone); }
 .footer__top:hover { color: var(--signal); }
 .footer__mark {
@@ -46,7 +45,4 @@
 }
 @media (max-width: 860px) {
   .footer__cols { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 480px) {
-  .footer__hint { display: none; }
 }

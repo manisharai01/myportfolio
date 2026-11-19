@@ -55,6 +55,7 @@
 .dep__head { padding: 0 8px 4px; color: var(--mute); font-size: 9px; }
 .dep__row { padding: 5px 8px; border-radius: 6px; background: rgba(237, 232, 223, 0.025); }
 .dep__route { font-family: var(--font-mono); font-size: 10.5px; color: var(--bone); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dep__code { display: none; }
 .dep__v, .dep__row > .dep__opt { font-family: var(--font-mono); font-size: 10px; color: var(--dim); white-space: nowrap; overflow: hidden; }
 .dep__st .flap__c { color: inherit; }
 .tone-ok .dep__st { color: var(--volt); }
@@ -445,4 +446,10 @@
   .hm__top { flex-direction: column; align-items: stretch; }
   .hm__svc { grid-template-columns: minmax(0, 1fr) 30px 74px; }
   .hm__ecg, .hm__p95 { display: none; }
+}
+@media (max-width: 460px) {
+  .dep__long { display: none; }
+  .dep__code { display: inline; }
+  .pass { flex-wrap: wrap; }
+  .pass__stamp { position: static; margin: 2px 0 0 auto; }
 }

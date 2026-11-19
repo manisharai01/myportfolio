@@ -67,7 +67,11 @@ export default function KineticName({ lines, className = '', fitHeight = false, 
     const ro = new ResizeObserver(fit)
     ro.observe(root)
     if (fitHeight) ro.observe(root.parentElement)
-    return () => ro.disconnect()
+    window.addEventListener('mr:fonts', fit)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('mr:fonts', fit)
+    }
   }, [fitHeight, linesKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {

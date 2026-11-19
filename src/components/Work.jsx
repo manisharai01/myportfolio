@@ -1,7 +1,6 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef } from 'react'
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion'
 import { ALSO, WORK } from '../data/content'
-import { useMedia } from '../lib/hooks'
 import { ArrowUpRight, Reveal, SectionHead } from './ui/Primitives.jsx'
 import Departures from './visuals/Departures.jsx'
 import Scoring from './visuals/Scoring.jsx'
@@ -13,51 +12,36 @@ import './visuals/visuals.css'
 
 const VISUALS = { departures: Departures, scoring: Scoring, phone: PhonePay, levels: Levels, health: Health }
 
-/** `${w}x${h}` of the viewport, debounced — used to re-test whether stacked cards fit. */
-function useViewportKey() {
-  const get = () => `${window.innerWidth}x${window.innerHeight}`
-  const [key, setKey] = useState(get)
-  useEffect(() => {
-    let t = 0
-    const on = () => {
-      clearTimeout(t)
-      t = setTimeout(() => setKey(get()), 160)
-    }
-    window.addEventListener('resize', on)
-    return () => {
-      clearTimeout(t)
-      window.removeEventListener('resize', on)
-    }
-  }, [])
-  return key
-}
-
-function WorkCard({ w, i, selfRef, nextRef, stacked }) {
+/**
+ * Stacking cards that work at every screen size:
+ * each card publishes its height (--h), and CSS pins it with
+ *   top: min(deck offset, 100svh − height)
+ * so a card shorter than the screen sticks near the top like a deck, and a taller
+ * card sticks by its bottom edge once you've read it. Either way the next card
+ * slides over it, and nothing is ever cut off.
+ */
+function WorkCard({ w, i, selfRef, nextRef }) {
   const Visual = VISUALS[w.visual]
   const reduce = useReducedMotion()
   const articleRef = useRef(null)
 
-  // Stacked (tall desktop): recede only while the *next* card slides over this one.
+  useLayoutEffect(() => {
+    const art = articleRef.current
+    const wrap = selfRef.current
+    if (!art || !wrap) return
+    const publish = () => wrap.style.setProperty('--h', `${art.offsetHeight}px`) // offsetHeight ignores transforms
+    publish()
+    const ro = new ResizeObserver(publish)
+    ro.observe(art)
+    return () => ro.disconnect()
+  }, [selfRef])
+
+  // Recede only while the *next* card slides over this one.
   // layoutEffect:false → subscribe after commit, once the next sibling's ref is attached.
-  const covered = stacked && !!nextRef
+  const covered = !!nextRef && !reduce
   const { scrollYProgress: cover } = useScroll({ target: nextRef ?? selfRef, offset: ['start end', 'start start'], layoutEffect: false })
-  const scale = useTransform(cover, [0, 1], [1, covered ? 0.93 : 1])
-  const shade = useTransform(cover, [0.3, 1], [0, covered ? 0.62 : 0])
-
-  // Flowing cards (phones, tablets, short screens): deal in with a tilt + scale as they arrive.
-  const { scrollYProgress: enter } = useScroll({ target: articleRef, offset: ['start end', 'start 0.5'] })
-  const eScale = useTransform(enter, [0, 1], [0.9, 1])
-  const eY = useTransform(enter, [0, 1], [90, 0])
-  const eRot = useTransform(enter, [0, 1], [10, 0])
-  const eOpacity = useTransform(enter, [0, 0.55], [0.25, 1])
-  const { scrollYProgress: through } = useScroll({ target: articleRef, offset: ['start end', 'end start'] })
-  const parallax = useTransform(through, [0, 1], [26, -26])
-
-  const style = stacked
-    ? { scale: covered ? scale : 1 }
-    : reduce
-      ? {}
-      : { scale: eScale, y: eY, rotateX: eRot, opacity: eOpacity, transformPerspective: 1100 }
+  const scale = useTransform(cover, [0, 1], [1, 0.93])
+  const shade = useTransform(cover, [0.25, 1], [0, 0.6])
 
   return (
     <div ref={selfRef} className="wcard-wrap" style={{ '--i': i }}>
@@ -65,7 +49,7 @@ function WorkCard({ w, i, selfRef, nextRef, stacked }) {
         ref={articleRef}
         id={`work-${w.id}`}
         className="wcard"
-        style={{ ...style, '--acc': w.accent, '--tint': w.tint }}
+        style={{ scale: covered ? scale : 1, '--acc': w.accent, '--tint': w.tint }}
         aria-labelledby={`work-${w.id}-title`}
       >
         <div className="wcard__info">
@@ -104,9 +88,9 @@ function WorkCard({ w, i, selfRef, nextRef, stacked }) {
           )}
         </div>
         <div className="wcard__right">
-          <motion.div className="wcard__visual" style={stacked || reduce ? undefined : { y: parallax }}>
+          <div className="wcard__visual">
             <Visual />
-          </motion.div>
+          </div>
           <ul className="wcard__highlights">
             {w.highlights.map((h, k) => (
               <motion.li
@@ -129,7 +113,7 @@ function WorkCard({ w, i, selfRef, nextRef, stacked }) {
             ))}
           </ul>
         </div>
-        <motion.div className="wcard__shade" style={{ opacity: stacked ? shade : 0 }} aria-hidden="true" />
+        <motion.div className="wcard__shade" style={{ opacity: covered ? shade : 0 }} aria-hidden="true" />
       </motion.article>
     </div>
   )
@@ -177,37 +161,7 @@ function More() {
 }
 
 export default function Work() {
-  const stackRef = useRef(null)
   const refs = useMemo(() => WORK.map(() => ({ current: null })), [])
-  const vpKey = useViewportKey()
-  // Stack the cards only on wide, tall-enough screens, and only if every card's
-  // content genuinely fits the sticky height — otherwise let them flow.
-  const tallEnough = useMedia('(min-width: 1024px) and (min-height: 700px)')
-  const [fits, setFits] = useState(true)
-  useLayoutEffect(() => setFits(true), [vpKey])
-  const stacked = tallEnough && fits
-
-  useLayoutEffect(() => {
-    if (!stacked) return
-    const root = stackRef.current
-    const overflowing = (el, slack = 2) => el && el.scrollHeight > el.clientHeight + slack
-    const check = () => {
-      for (const card of root.querySelectorAll('.wcard')) {
-        if (
-          overflowing(card.querySelector('.wcard__info')) ||
-          overflowing(card.querySelector('.wcard__right')) ||
-          overflowing(card.querySelector('.screen__body'), 6) ||
-          overflowing(card.querySelector('.phone-stage'), 6)
-        ) {
-          setFits(false)
-          return
-        }
-      }
-    }
-    check()
-    document.fonts?.ready.then(check)
-  }, [stacked, vpKey])
-
   return (
     <section id="work" className="section work" aria-label="Selected work">
       <div className="container">
@@ -217,9 +171,9 @@ export default function Work() {
           aside="Five systems I built or owned end to end — from apps live on both stores to a complete platform built for a government tender. The visuals are rebuilt in code to show how each one behaves."
         />
       </div>
-      <div ref={stackRef} className={`work__stack container ${stacked ? 'is-stacked' : 'is-flow'}`}>
+      <div className="work__stack container">
         {WORK.map((w, i) => (
-          <WorkCard key={w.id} w={w} i={i} selfRef={refs[i]} nextRef={refs[i + 1]} stacked={stacked} />
+          <WorkCard key={w.id} w={w} i={i} selfRef={refs[i]} nextRef={refs[i + 1]} />
         ))}
       </div>
       <div className="container">

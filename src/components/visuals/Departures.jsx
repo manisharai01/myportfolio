@@ -4,12 +4,12 @@ import { Flap, QrGlyph, Screen, useLoop } from './Screen.jsx'
 
 /* Fictional vessels; real island names (Port Blair is now Sri Vijaya Puram). */
 const ROWS = [
-  { t: '06:20', route: 'SVPURAM → SWARAJ', v: 'KESTREL', c: 'PRM' },
-  { t: '07:15', route: 'SVPURAM → SHAHEED', v: 'ASTER', c: 'STD' },
-  { t: '08:40', route: 'SWARAJ → SHAHEED', v: 'MONSOON', c: 'CMF' },
-  { t: '09:30', route: 'SVPURAM → LONG IS', v: 'CORAL', c: 'STD' },
-  { t: '11:00', route: 'SVPURAM → RANGAT', v: 'TIDE', c: 'STD' },
-  { t: '12:10', route: 'SHAHEED → SVPURAM', v: 'SAFFRON', c: 'PRM' },
+  { t: '06:20', route: 'SVPURAM → SWARAJ', code: 'SVP → SWJ', v: 'KESTREL', c: 'PRM' },
+  { t: '07:15', route: 'SVPURAM → SHAHEED', code: 'SVP → SHD', v: 'ASTER', c: 'STD' },
+  { t: '08:40', route: 'SWARAJ → SHAHEED', code: 'SWJ → SHD', v: 'MONSOON', c: 'CMF' },
+  { t: '09:30', route: 'SVPURAM → LONG IS', code: 'SVP → LNG', v: 'CORAL', c: 'STD' },
+  { t: '11:00', route: 'SVPURAM → RANGAT', code: 'SVP → RGT', v: 'TIDE', c: 'STD' },
+  { t: '12:10', route: 'SHAHEED → SVPURAM', code: 'SHD → SVP', v: 'SAFFRON', c: 'PRM' },
 ]
 
 const FRAMES = [
@@ -53,7 +53,10 @@ export default function Departures() {
           {ROWS.map((r, i) => (
             <div className={`dep__row tone-${tone(statuses[i])}`} key={r.t}>
               <Flap value={r.t} />
-              <span className="dep__route">{r.route}</span>
+              <span className="dep__route">
+                <span className="dep__long">{r.route}</span>
+                <span className="dep__code" aria-hidden="true">{r.code}</span>
+              </span>
               <span className="dep__opt dep__v">MV {r.v}</span>
               <span className="dep__opt">{r.c}</span>
               <Flap value={statuses[i]} width={10} className="dep__st" />

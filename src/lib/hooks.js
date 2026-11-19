@@ -52,5 +52,24 @@ export function useTicker(fn, ms, active = true) {
   }, [fn, ms, active])
 }
 
+/** `${w}x${h}` of the viewport, debounced — re-run layout checks when it changes. */
+export function useViewportKey(delay = 160) {
+  const get = () => `${window.innerWidth}x${window.innerHeight}`
+  const [key, setKey] = useState(get)
+  useEffect(() => {
+    let t = 0
+    const on = () => {
+      clearTimeout(t)
+      t = setTimeout(() => setKey(get()), delay)
+    }
+    window.addEventListener('resize', on)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('resize', on)
+    }
+  }, [delay])
+  return key
+}
+
 export const lerp = (a, b, t) => a + (b - a) * t
 export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))

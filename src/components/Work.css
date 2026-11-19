@@ -1,15 +1,17 @@
 .work { background: var(--ink); padding-bottom: clamp(80px, 10vw, 140px); }
 
-.work__stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(28px, 5vw, 56px); }
-.wcard-wrap { min-width: 0; }
-.work__stack.is-flow { perspective: 1400px; }
-.work__stack.is-stacked { gap: 0; padding-bottom: 8vh; }
-.work__stack.is-stacked .wcard-wrap {
+/* ---------- the stack: every card pins, the next one slides over it ---------- */
+.work__stack { display: grid; grid-template-columns: minmax(0, 1fr); padding-bottom: 4vh; }
+.wcard-wrap {
+  --pin: calc(14px + var(--i) * 12px); /* deck offset: earlier cards peek out above */
+  min-width: 0;
   position: sticky;
-  top: calc(var(--nav-h) + 6px + var(--i) * 14px);
-  margin-bottom: 9vh;
+  /* short card → pin at the deck offset; tall card → pin by its bottom edge */
+  top: min(var(--pin), calc(100vh - var(--h, 100vh) - 14px));
+  top: min(var(--pin), calc(100svh - var(--h, 100svh) - 14px));
+  margin-bottom: clamp(56px, 14vh, 160px);
 }
-.work__stack.is-stacked .wcard-wrap:last-child { margin-bottom: 0; }
+.wcard-wrap:last-child { margin-bottom: 0; }
 
 .wcard {
   --acc: var(--signal);
@@ -27,11 +29,12 @@
     radial-gradient(110% 80% at 100% 0%, color-mix(in srgb, var(--acc) 9%, transparent), transparent 60%),
     var(--tint);
   overflow: hidden;
-  transform-origin: 50% 0%;
+  /* recede around the middle of whatever part of the card is on screen */
+  transform-origin: 50% 50%;
+  transform-origin: 50% max(50%, calc(var(--h, 0px) - 50svh + 7px));
   box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.5);
   will-change: transform;
 }
-.is-stacked .wcard { height: min(820px, calc(100svh - var(--nav-h) - 84px)); }
 .wcard::before {
   content: '';
   position: absolute;
@@ -49,7 +52,7 @@
 .wcard__info { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: var(--gap); container: info / inline-size; }
 /* narrow info column (tablets, split screens): numbers go 2×2 so values like “~4 wks” never clip */
 @container info (max-width: 440px) {
-  .wcard__metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wcard__info .wcard__metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .wcard__info > *, .wcard__right > * { flex-shrink: 0; min-width: 0; } /* never squash content — overflow is detected instead */
 .wcard > * { min-width: 0; }
@@ -136,7 +139,6 @@
 /* ---------- right column ---------- */
 .wcard__right { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 16px; }
 .wcard__visual { min-height: 340px; }
-.is-stacked .wcard__visual { flex: 1 1 0; min-height: 0; }
 .wcard__highlights { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 22px; }
 .wcard__highlights li { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline; }
 .wcard__highlights .mono { color: var(--acc); font-size: 10px; }

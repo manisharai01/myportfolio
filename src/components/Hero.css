@@ -40,7 +40,7 @@
   border-bottom: 1px solid var(--line);
   color: var(--dim);
 }
-.hero__meta li { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.hero__meta li { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .hero__meta-end { justify-content: flex-end; }
 .hero__time { color: var(--bone); font-variant-numeric: tabular-nums; }
 
@@ -65,7 +65,7 @@
 .hero__copy::before {
   content: '';
   position: absolute;
-  inset: -40px -60px -30px -80px;
+  inset: -12px -60px -30px -80px;
   z-index: -1;
   background: radial-gradient(closest-side, rgba(11, 10, 9, 0.78), rgba(11, 10, 9, 0.45) 60%, transparent);
   pointer-events: none;
@@ -127,6 +127,12 @@
   .hero__proof { display: none; }
   .hero__lede { margin-bottom: 14px; }
 }
+/* very short wide screens (smart displays, small laptop windows): compact copy so it stays beside "RAI" */
+@media (max-height: 660px) and (min-width: 1000px) {
+  .hero__tagline { font-size: clamp(24px, 2.2vw, 34px); margin-bottom: 8px; }
+  .hero__lede { font-size: 15px; max-width: 40ch; margin-bottom: 12px; }
+  .hero__ctas .btn { height: 42px; padding: 0 18px; }
+}
 @media (max-width: 1180px) {
   .hero__meta { grid-template-columns: repeat(2, 1fr); row-gap: 8px; }
   .hero__meta-end { justify-content: flex-start; }
@@ -143,6 +149,6 @@
   .hero__meta li:nth-child(n + 3) { display: none; }
   .hero__meta li:nth-child(2) { justify-content: flex-end; }
 }
-@media (max-width: 420px) {
+@media (max-width: 600px) {
   .hero__meta li:nth-child(2) { display: none; }
 }

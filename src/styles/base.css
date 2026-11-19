@@ -48,6 +48,14 @@
   color-scheme: dark;
 }
 
+/* No variable-font support (or fonts failed): bold system faces instead of hairlines. */
+html.no-vf {
+  --font-display: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --font-serif: 'Iowan Old Style', Georgia, serif;
+}
+
 /* ==========================================================================
    Reset
    ========================================================================== */

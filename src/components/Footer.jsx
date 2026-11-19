@@ -56,9 +56,6 @@ export default function Footer() {
         </div>
         <div className="footer__bar mono">
           <span>© {new Date().getFullYear()} {PROFILE.name}</span>
-          <span className="footer__hint">
-            Tip: press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd>
-          </span>
           <a href="#top" onClick={(e) => go(e, '#top')} className="footer__top">
             Back to top ↑
           </a>

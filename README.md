@@ -18,8 +18,20 @@ Live: https://manisharai01.github.io/myportfolio/
   - a fintech phone that walks through record → pay → fulfil
   - a gamification engine
   - a microservice health monitor
+- **Stacking project cards at every screen size.** Each card publishes its height, and CSS pins it
+  with `top: min(deck offset, 100svh − height)`. Short cards stick like a deck; tall cards stick by
+  their bottom edge once read. The next card always slides over, and nothing is ever clipped.
 - **Signal.** A commit heatmap, a 24-hour commit clock and a language mix, all generated from real
   `git log` data.
+- **Journey as release notes.** Roles ship as versions (v0.0 → v2.0) in a pinned, scroll-stepped
+  stage:
+  - an odometer version number
+  - a ghost codename in the background
+  - a typed `git` command
+  - a changelog for each role
+  - a real monthly-commit track with a moving playhead
+
+  Screens that can't fit the stage get a designed list instead.
 - **Halftone portrait.** Ink dots on paper that scatter away from the cursor.
 - **Extras:**
   - `Ctrl/⌘ + K` command palette

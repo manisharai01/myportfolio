@@ -47,8 +47,7 @@ export const TICKER = [
 /* ------------------------------------------------------------------ */
 export const MANIFESTO = [
   "I'm Manisha — a full-stack engineer drawn to the hard,",
-  { em: 'live' },
-  { chip: 'live' },
+  { chip: 'live', say: 'live' }, // `say` = what screen readers hear in place of the chip
   'parts of software: five judges’ marks landing on one leaderboard',
   { chip: 'score' },
   'a bill paid in two taps',
@@ -142,7 +141,7 @@ export const WORK = [
     role: 'Module owner in the Flutter app — bill payments, trading, loans, help desk',
     headline: 'Feature modules for a fintech app that’s live on both stores.',
     summary:
-      'TFM builds your financial picture from bank SMS, email alerts and statements. In its Flutter app I built the utility-payments module end to end — finished, but held back from launch by BBPS licensing — and the trading, loan-application and support modules: 444 commits across ~120 feature branches.',
+      'TFM builds your financial picture from bank SMS, email alerts and statements. In its Flutter app I built the utility-payments module end to end — finished, but held back from launch by BBPS licensing — and the trading, loan-application and support modules: 471 commits across ~120 feature branches.',
     highlights: [
       'Utility payments, built end to end (71% of the module): BBPS bills in 7 categories, prepaid & postpaid recharge with operator detection, credit-card bills, server-driven biller forms. Launch is pending a BBPS licence.',
       'Two-step Razorpay flow — record, pay, then fulfil — so money never moves without a transaction on file.',
@@ -150,7 +149,7 @@ export const WORK = [
       'App-wide light/dark theming on a ThemeExtension across 138 files; staging/production flavours with per-env Firebase and a release guard.',
     ],
     metrics: [
-      { v: '444', k: 'commits' },
+      { v: '471', k: 'commits' },
       { v: '71%', k: 'of the bill-pay module' },
       { v: '7', k: 'bill categories' },
       { v: '138', k: 'files re-themed' },
@@ -189,6 +188,10 @@ export const WORK = [
       { v: '3', k: 'leaderboards' },
     ],
     stack: ['Node.js', 'TypeScript', 'Express', 'MongoDB', 'Zod', 'OpenAPI', 'Flutter', 'React'],
+    links: [
+      { label: 'In the app — Google Play', href: 'https://play.google.com/store/apps/details?id=com.thefatmoney' },
+      { label: 'App Store', href: 'https://apps.apple.com/in/app/the-fat-money/id6741164147' },
+    ],
     accent: '#ff7ab6',
     tint: '#170b11',
     visual: 'levels',
@@ -296,45 +299,85 @@ export const ALSO = [
 ]
 
 /* ------------------------------------------------------------------ */
-/*  Journey                                                            */
+/*  Journey — every role shipped as a release, oldest first.           */
+/*  v: [major, minor] · at: 'YYYY-MM' start month on the commit track  */
+/*  notes: [symbol, text] — '+' added · '~' improved · '→' next · '✓'  */
 /* ------------------------------------------------------------------ */
-export const JOURNEY = [
+export const RELEASES = [
   {
-    when: 'Jul 2025 — Now',
-    role: 'Flutter & Full-Stack Developer',
-    org: 'Sheeraj Codeworks · Gurugram',
-    current: true,
-    body: 'Four products, 27 repositories. Grew from Flutter feature work to owning backends, real-time systems and release pipelines: bootstrapped EquiEbook’s backend and admin, wrote an island tourism API almost single-handedly, and wrote TFM’s gamification backend and health monitor solo.',
-    tags: ['Flutter', 'React Native', 'NestJS', 'Node.js', 'PostgreSQL', 'Cloud Run'],
+    v: [0, 0],
+    code: 'init',
+    at: null,
+    when: '2022 — 2026',
+    role: 'B.Tech, Computer Science',
+    org: 'Maharshi Dayanand University · Rohtak',
+    cmd: 'git init',
+    notes: [
+      ['+', 'Computer Science with a Data Science specialisation'],
+      ['+', 'Capstone: Health Peek — a multilingual mental-health chat analyzer'],
+      ['✓', 'Class of 2026 · CGPA 8.3'],
+    ],
+    tags: ['CGPA 8.3', 'Data Science'],
   },
   {
-    when: 'Jan 2025 — Jun 2025',
-    role: 'IT Intern',
-    org: 'Sheeraj Projects · Gurugram',
-    body: 'Ran Microsoft 365 and AWS EC2 for 100+ staff, rolled out biometric attendance, helped ship the Astra Designs website — and started committing to the TFM Flutter app in February.',
-    tags: ['AWS EC2', 'Microsoft 365', 'Flutter'],
-  },
-  {
-    when: 'Jul 2024 — Aug 2024',
-    role: 'Web Developer Intern',
-    org: 'Webs Jyoti · Gurugram',
-    body: 'Built and deployed three responsive websites and tuned their front-end performance.',
-    tags: ['HTML', 'CSS', 'JavaScript', 'Bootstrap'],
-  },
-  {
-    when: 'Jun 2024 — Jul 2024',
+    v: [0, 1],
+    code: 'tensor',
+    at: '2024-06',
+    when: 'Jun — Jul 2024',
     role: 'Data Science & ML Intern',
     org: 'YBI Foundation · Remote',
-    body: 'Trained classification models with TensorFlow and Keras, prototyping in Colab.',
+    cmd: 'git commit -m "first model"',
+    notes: [
+      ['+', 'Trained classification models with TensorFlow and Keras'],
+      ['+', 'Prototyped and preprocessed data in Google Colab'],
+    ],
     tags: ['Python', 'TensorFlow', 'Keras'],
   },
   {
-    when: '2022 — 2026',
-    role: 'B.Tech, Computer Science (Data Science)',
-    org: 'Maharshi Dayanand University · Rohtak',
-    body: 'CGPA 8.3. Capstone: Health Peek, a multilingual mental-health chat analyzer with transformer models and clinical PDF reports.',
-    tags: ['CGPA 8.3', 'Capstone: Health Peek'],
-    edu: true,
+    v: [0, 2],
+    code: 'static',
+    at: '2024-07',
+    when: 'Jul — Aug 2024',
+    role: 'Web Developer Intern',
+    org: 'Webs Jyoti · Gurugram',
+    cmd: 'git push origin gh-pages',
+    notes: [
+      ['+', 'Built and deployed three responsive websites'],
+      ['~', 'Tuned front-end performance with lightweight design practices'],
+    ],
+    tags: ['HTML', 'CSS', 'JavaScript', 'Bootstrap'],
+  },
+  {
+    v: [0, 5],
+    code: 'ops',
+    at: '2025-01',
+    when: 'Jan — Jun 2025',
+    role: 'IT Intern',
+    org: 'Sheeraj Projects · Gurugram',
+    cmd: 'git checkout -b flutter',
+    notes: [
+      ['+', 'Ran Microsoft 365 and AWS EC2 for 100+ staff'],
+      ['+', 'Rolled out biometric attendance; helped ship the Astra Designs site'],
+      ['→', 'First commit to The Fat Money’s Flutter app — February 2025'],
+    ],
+    tags: ['AWS EC2', 'Microsoft 365', 'Flutter'],
+  },
+  {
+    v: [1, 0],
+    code: 'realtime',
+    at: '2025-07',
+    when: 'Jul 2025 — Now',
+    head: true,
+    role: 'Flutter & Full-Stack Developer',
+    org: 'Sheeraj Codeworks · Gurugram',
+    cmd: 'git push origin main',
+    notes: [
+      ['+', 'Owned The Fat Money’s bill payments, trading, loans and help desk in Flutter'],
+      ['+', 'Bootstrapped EquiEbook’s backend and admin; built live multi-judge scoring'],
+      ['+', 'Sole author of TFM’s gamification engine and fleet health monitor'],
+      ['+', 'Wrote 146 of 154 commits on a 222-endpoint island-tourism API'],
+    ],
+    tags: ['Flutter', 'NestJS', 'PostgreSQL', 'Socket.IO', 'Cloud Run'],
   },
 ]
 

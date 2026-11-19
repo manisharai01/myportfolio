@@ -72,7 +72,7 @@ function Manifesto() {
     else if (part.chip) tokens.push({ chip: part.chip })
   })
   const n = tokens.length
-  const plain = MANIFESTO.filter((p) => typeof p === 'string' || p.em).map((p) => (typeof p === 'string' ? p : p.em)).join(' ')
+  const plain = MANIFESTO.map((p) => (typeof p === 'string' ? p : p.em || p.say)).filter(Boolean).join(' ')
   return (
     <p ref={ref} className="manifesto" aria-label={plain}>
       {tokens.map((t, i) => {

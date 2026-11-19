@@ -28,14 +28,34 @@ export function destroyLenis() {
 
 export const getLenis = () => lenis
 
+/**
+ * Document Y of an element's in-flow position. Sticky ancestors (the stacking
+ * work cards) report wherever they're currently stuck, so measure with them
+ * briefly un-stuck — synchronous, so nothing ever paints in that state.
+ */
+export function staticTop(el) {
+  const stuck = []
+  for (let n = el; n && n !== document.body; n = n.parentElement) {
+    if (getComputedStyle(n).position === 'sticky') {
+      stuck.push([n, n.style.position])
+      n.style.position = 'static'
+    }
+  }
+  // measure the (untransformed) sticky wrapper itself — the card inside may be scaled down
+  const anchor = stuck.length ? stuck[0][0] : el
+  const top = anchor.getBoundingClientRect().top + window.scrollY
+  stuck.forEach(([n, v]) => (n.style.position = v))
+  return top
+}
+
 export function scrollToTarget(target, opts = {}) {
   const el = typeof target === 'string' ? document.querySelector(target) : target
+  const y = el ? staticTop(el) : 0
   if (lenis) {
-    lenis.scrollTo(el ?? 0, { duration: 1.6, ...opts })
+    lenis.scrollTo(y, { duration: 1.6, ...opts })
     return
   }
-  if (el) el.scrollIntoView({ behavior: 'smooth' })
-  else window.scrollTo({ top: 0, behavior: 'smooth' })
+  window.scrollTo({ top: y, behavior: 'smooth' })
 }
 
 export const stopScroll = () => lenis?.stop()
