@@ -1,66 +1,54 @@
-import { useEffect, useState } from 'react'
-import Lenis from 'lenis'
-import Navbar from './components/Navbar.jsx'
+import { useEffect } from 'react'
+import { MotionConfig, motion, useScroll, useSpring } from 'framer-motion'
+import { destroyLenis, initLenis } from './lib/scroll'
+import Preloader from './components/Preloader.jsx'
+import Cursor from './components/Cursor.jsx'
+import Nav from './components/Nav.jsx'
 import Hero from './components/Hero.jsx'
 import About from './components/About.jsx'
-import Stats from './components/Stats.jsx'
-import Marquee from './components/Marquee.jsx'
-import Experience from './components/Experience.jsx'
-import Projects from './components/Projects.jsx'
-import Skills from './components/Skills.jsx'
+import Work from './components/Work.jsx'
+import Signal from './components/Signal.jsx'
+import Journey from './components/Journey.jsx'
+import Toolbelt from './components/Toolbelt.jsx'
+import Lab from './components/Lab.jsx'
 import Contact from './components/Contact.jsx'
 import Footer from './components/Footer.jsx'
-import ScrollProgress from './components/ScrollProgress.jsx'
+import Toaster from './components/Toaster.jsx'
+
+function ScrollMeter() {
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 40, mass: 0.3 })
+  return <motion.div className="scroll-meter" style={{ scaleX }} aria-hidden="true" />
+}
 
 export default function App() {
-  const [pos, setPos] = useState({ x: -500, y: -500 })
-
   useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.15,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-    })
-    function raf(time) { lenis.raf(time); requestAnimationFrame(raf) }
-    requestAnimationFrame(raf)
-    return () => lenis.destroy()
-  }, [])
-
-  useEffect(() => {
-    let raf
-    let target = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
-    let current = { ...target }
-    const onMove = (e) => { target = { x: e.clientX, y: e.clientY } }
-    const tick = () => {
-      current.x += (target.x - current.x) * 0.08
-      current.y += (target.y - current.y) * 0.08
-      setPos({ x: current.x, y: current.y })
-      raf = requestAnimationFrame(tick)
-    }
-    window.addEventListener('mousemove', onMove)
-    raf = requestAnimationFrame(tick)
-    return () => { window.removeEventListener('mousemove', onMove); cancelAnimationFrame(raf) }
+    initLenis()
+    return () => destroyLenis()
   }, [])
 
   return (
-    <>
-      <ScrollProgress />
-      <div
-        className="cursor-blob"
-        style={{ transform: `translate(${pos.x}px, ${pos.y}px) translate(-50%, -50%)` }}
-      />
-      <Navbar />
-      <main>
+    <MotionConfig reducedMotion="user">
+      <a href="#main" className="skip-link">
+        Skip to content
+      </a>
+      <Preloader />
+      <Cursor />
+      <Nav />
+      <ScrollMeter />
+      <main id="main">
         <Hero />
-        <Marquee />
         <About />
-        <Stats />
-        <Experience />
-        <Projects />
-        <Skills />
+        <Work />
+        <Signal />
+        <Journey />
+        <Toolbelt />
+        <Lab />
         <Contact />
       </main>
       <Footer />
-    </>
+      <Toaster />
+      <div className="grain" aria-hidden="true" />
+    </MotionConfig>
   )
 }

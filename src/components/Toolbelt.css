@@ -1,0 +1,83 @@
+.toolbelt { background: var(--ink); overflow-x: clip; }
+.tb { border-top: 1px solid var(--line); }
+.tb__row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 24px;
+  align-items: start;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.tb__group { color: var(--dim); padding-top: 14px; display: flex; gap: 12px; }
+.tb__group span { color: var(--mute); }
+.tb__items { display: flex; flex-wrap: wrap; gap: 0 4px; }
+.tb__items li { display: inline-flex; align-items: center; }
+.tb__items li:not(:last-child)::after { content: '/'; color: var(--ink-4); font-size: clamp(22px, 2.6vw, 42px); font-family: var(--font-display); font-weight: 300; margin: 0 6px 0 2px; }
+.tb__item {
+  position: relative;
+  padding: 2px 4px;
+  border-radius: 8px;
+  color: var(--bone);
+  text-align: left;
+}
+/* The stretched word is an overlay, so hovering never reflows the line
+   (a reflow would move the word out from under the pointer and flicker). */
+.tb__name {
+  position: relative;
+  display: inline-block;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: clamp(24px, 2.8vw, 46px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  font-variation-settings: 'wdth' 92, 'wght' 650;
+  transition: color 0.2s;
+}
+.tb__name::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 2;
+  white-space: nowrap;
+  color: var(--signal);
+  opacity: 0;
+  transform: translateX(-50%);
+  font-variation-settings: 'wdth' 92, 'wght' 650;
+  pointer-events: none;
+  transition: font-variation-settings 0.55s var(--ease-out), opacity 0.15s;
+}
+.tb__item.is-on .tb__name { color: transparent; }
+.tb__item.is-on .tb__name::after { opacity: 1; font-variation-settings: 'wdth' 130, 'wght' 860; }
+.tb__where {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  z-index: 5;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--bone);
+  color: var(--ink);
+  font-size: 10px;
+  white-space: nowrap;
+  max-width: min(340px, 86vw);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(calc(-50% + var(--tip-dx, 0px)), 6px);
+  transition: opacity 0.25s, transform 0.35s var(--ease-out);
+}
+.tb__where::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  border: 5px solid transparent;
+  border-top-color: var(--bone);
+  transform: translateX(calc(-50% - var(--tip-dx, 0px)));
+}
+.tb__item.is-on .tb__where { opacity: 1; transform: translate(calc(-50% + var(--tip-dx, 0px)), 0); }
+@media (max-width: 760px) {
+  .tb__row { grid-template-columns: 1fr; gap: 6px; }
+  .tb__group { padding-top: 4px; }
+  .tb__where { white-space: normal; width: max-content; }
+}

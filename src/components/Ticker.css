@@ -1,0 +1,39 @@
+.tk {
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(11, 10, 9, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  height: 46px;
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+}
+.tk::before,
+.tk::after {
+  content: '';
+  position: absolute; top: 0; bottom: 0;
+  width: 80px;
+  z-index: 1;
+  pointer-events: none;
+}
+.tk::before { left: 0; background: linear-gradient(90deg, var(--ink), transparent); }
+.tk::after { right: 0; background: linear-gradient(-90deg, var(--ink), transparent); }
+.tk__track {
+  display: flex;
+  width: max-content;
+  animation: tk-scroll 48s linear infinite;
+}
+.tk:hover .tk__track { animation-play-state: paused; }
+.tk__row { display: flex; flex: none; }
+.tk__item { display: inline-flex; align-items: center; gap: 10px; padding-right: 22px; white-space: nowrap; }
+.tk__k { color: var(--mute); }
+.tk__v { color: var(--bone); }
+.tk__up { color: var(--volt); font-size: 9px; }
+.tk__sep { color: var(--ink-4); padding-left: 12px; }
+@keyframes tk-scroll { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .tk__track { animation: none; }
+}

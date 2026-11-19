@@ -40,6 +40,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Local stats config (private repo paths + git identities)
+scripts/stats.config.json
+
 # Lock files (keep package-lock.json, ignore yarn/pnpm)
 yarn.lock
 pnpm-lock.yaml

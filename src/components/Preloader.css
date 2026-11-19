@@ -1,0 +1,44 @@
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 24px var(--gutter) 40px;
+  background: var(--ink);
+  color: var(--bone);
+}
+.boot__top { display: flex; justify-content: space-between; color: var(--dim); }
+.boot__mid { display: flex; align-items: center; justify-content: flex-end; }
+.boot__count {
+  font-family: var(--font-mono);
+  font-weight: 200;
+  font-stretch: 112.5%;
+  font-size: clamp(110px, 24vw, 380px);
+  line-height: 0.8;
+  letter-spacing: -0.06em;
+  font-variant-numeric: tabular-nums;
+}
+.boot__log { display: grid; gap: 6px; max-width: 520px; }
+.boot__log li {
+  display: flex; align-items: baseline; gap: 10px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.4s, transform 0.5s var(--ease-out);
+  color: var(--dim);
+}
+.boot__log li.is-on { opacity: 1; transform: none; }
+.boot__t { color: var(--mute); }
+.boot__dots { flex: 1; border-bottom: 1px dotted var(--line-2); transform: translateY(-3px); }
+.boot__v { color: var(--bone); }
+.boot__log li:last-child .boot__v { color: var(--signal); }
+.boot__bar {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: var(--signal);
+  transform-origin: left;
+}
+@media (max-width: 640px) {
+  .boot__mid { justify-content: flex-start; }
+}

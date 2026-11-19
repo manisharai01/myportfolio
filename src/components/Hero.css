@@ -1,0 +1,148 @@
+.hero {
+  position: relative;
+  height: max(100svh, 640px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ink);
+  isolation: isolate;
+  padding-bottom: 24px; /* the next sheet overlaps by 24px — keep the ticker clear */
+}
+.field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+.field[data-fallback='true'] {
+  background:
+    radial-gradient(60% 50% at 70% 40%, rgba(255, 77, 26, 0.16), transparent 70%),
+    repeating-radial-gradient(circle at 30% 60%, rgba(237, 232, 223, 0.06) 0 1px, transparent 1px 28px),
+    var(--ink);
+}
+.hero__inner {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: calc(var(--nav-h) + 18px);
+  padding-bottom: clamp(14px, 2vw, 26px);
+}
+
+/* meta row */
+.hero__meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--dim);
+}
+.hero__meta li { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.hero__meta-end { justify-content: flex-end; }
+.hero__time { color: var(--bone); font-variant-numeric: tabular-nums; }
+
+/* stage: the name fills it, the copy sits in the gap left of "RAI" */
+.hero__stage {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.hero__copy {
+  position: absolute;
+  left: 0;
+  bottom: 0.2em;
+  width: min(44%, 640px);
+  padding-bottom: 4px;
+  isolation: isolate;
+}
+/* soft shade so the copy stays legible over busy contour lines */
+.hero__copy::before {
+  content: '';
+  position: absolute;
+  inset: -40px -60px -30px -80px;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(11, 10, 9, 0.78), rgba(11, 10, 9, 0.45) 60%, transparent);
+  pointer-events: none;
+}
+.hero__tagline {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 340;
+  font-size: clamp(30px, 2.9vw, 50px);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: var(--bone);
+  margin-bottom: 12px;
+}
+.hero__lede {
+  font-size: clamp(17px, 1.25vw, 21px);
+  line-height: 1.42;
+  color: var(--bone-2);
+  max-width: 36ch;
+  margin-bottom: 20px;
+}
+.hero__ctas { display: flex; flex-wrap: wrap; gap: 10px; }
+.hero__proof { margin-top: 14px; color: var(--dim); }
+
+/* name */
+.kn {
+  --kn-fs: 18vw;
+  font-family: var(--font-display);
+  font-size: var(--kn-fs);
+  font-weight: 780;
+  line-height: 0.8;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+  color: var(--bone);
+  user-select: none;
+}
+.kn__line { display: flex; }
+.kn__line--right { justify-content: flex-end; }
+.kn__word { display: inline-flex; white-space: nowrap; }
+.kn__l {
+  display: inline-block;
+  font-variation-settings: 'wdth' 52, 'wght' 120;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.kn__sp { width: 0.22em; }
+.kn.is-measuring .kn__l {
+  font-variation-settings: 'wdth' 92, 'wght' 780 !important;
+  transform: none !important;
+}
+.kn.is-static .kn__l {
+  font-variation-settings: 'wdth' 92, 'wght' 780;
+  opacity: 1;
+  transform: none;
+}
+.hero .kn__line:last-child .kn__l:last-child { color: var(--signal); }
+
+@media (max-height: 760px) and (min-width: 1000px) {
+  .hero__proof { display: none; }
+  .hero__lede { margin-bottom: 14px; }
+}
+@media (max-width: 1180px) {
+  .hero__meta { grid-template-columns: repeat(2, 1fr); row-gap: 8px; }
+  .hero__meta-end { justify-content: flex-start; }
+}
+@media (max-width: 999px) {
+  .hero { height: auto; min-height: 100svh; }
+  .hero__inner { flex: 1 1 auto; }
+  .hero__stage { flex: 1 1 auto; justify-content: flex-end; padding-top: 32px; }
+  .hero__copy { position: relative; bottom: auto; width: auto; order: -1; margin-bottom: 36px; }
+  .hero__copy::before { inset: -30px -16px -20px -16px; }
+  .hero__lede { max-width: 30ch; }
+}
+@media (max-width: 760px) {
+  .hero__meta li:nth-child(n + 3) { display: none; }
+  .hero__meta li:nth-child(2) { justify-content: flex-end; }
+}
+@media (max-width: 420px) {
+  .hero__meta li:nth-child(2) { display: none; }
+}

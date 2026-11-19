@@ -1,49 +1,44 @@
-import { HiOutlineEnvelope, HiOutlinePhone } from 'react-icons/hi2'
-import { FaGithub, FaLinkedinIn } from 'react-icons/fa'
-import { Reveal } from './Reveal.jsx'
-import { Magnetic, SplitText } from './Animated.jsx'
-import { PROFILE } from '../data.js'
+import { PROFILE } from '../data/content'
+import { copyText, toast } from '../lib/toast'
+import KineticName from './KineticName.jsx'
+import { ArrowUpRight, CopyIcon, GitHubIcon, LinkedInIcon, Magnetic, Reveal, Scramble } from './ui/Primitives.jsx'
+import './Contact.css'
 
 export default function Contact() {
+  const copy = async () => toast((await copyText(PROFILE.email)) ? 'Email copied — talk soon' : PROFILE.email)
   return (
-    <section id="contact" className="contact">
+    <section id="contact" className="contact" aria-label="Contact">
       <div className="container">
-        <Reveal><span className="eyebrow">Get in touch</span></Reveal>
-        <h2>
-          <SplitText text="Let's build" />
-          <br />
-          <span className="serif-accent"><SplitText text="something great." delay={0.2} /></span>
-        </h2>
-        <Reveal delay={0.1}>
-          <p>
-            Open to full-time roles, internships and freelance work. I'll usually reply within a day —
-            send a note and let's chat.
-          </p>
-        </Reveal>
-        <Reveal delay={0.15}>
-          <div className="contact-links">
-            <Magnetic strength={0.3}>
-              <a className="btn btn-primary" href={`mailto:${PROFILE.email}`}>
-                <HiOutlineEnvelope /> {PROFILE.email}
+        <div className="contact__top">
+          <Scramble as="p" className="mono" text="05 — Contact" />
+          <p className="mono">Replies within a day · IST (UTC+5:30)</p>
+        </div>
+        <KineticName as="h2" className="contact__kn" lines={[{ text: 'LET’S TALK' }]} />
+        <div className="contact__grid">
+          <Reveal className="contact__pitch">
+            <p>
+              Hiring for a team that ships real-time, mobile or backend work? Building something that has to stay up? I’d love to hear about it.
+            </p>
+          </Reveal>
+          <Reveal className="contact__actions" delay={0.1}>
+            <Magnetic strength={0.2}>
+              <a className="contact__email" href={`mailto:${PROFILE.email}`} data-cursor="label" data-cursor-label="Write">
+                {PROFILE.email}
               </a>
             </Magnetic>
-            <Magnetic strength={0.3}>
-              <a className="btn btn-ghost" href={`tel:${PROFILE.phone}`}>
-                <HiOutlinePhone /> {PROFILE.phone}
+            <div className="contact__row">
+              <button className="cbtn mono" onClick={copy} data-cursor="label" data-cursor-label="Copy">
+                <CopyIcon width={14} height={14} /> Copy email
+              </button>
+              <a className="cbtn mono" href={PROFILE.linkedin} target="_blank" rel="noreferrer">
+                <LinkedInIcon width={14} height={14} /> LinkedIn <ArrowUpRight width={11} height={11} />
               </a>
-            </Magnetic>
-            <Magnetic strength={0.3}>
-              <a className="btn btn-ghost" href={PROFILE.github} target="_blank" rel="noreferrer">
-                <FaGithub /> GitHub
+              <a className="cbtn mono" href={PROFILE.github} target="_blank" rel="noreferrer">
+                <GitHubIcon width={14} height={14} /> GitHub <ArrowUpRight width={11} height={11} />
               </a>
-            </Magnetic>
-            <Magnetic strength={0.3}>
-              <a className="btn btn-ghost" href={PROFILE.linkedin} target="_blank" rel="noreferrer">
-                <FaLinkedinIn /> LinkedIn
-              </a>
-            </Magnetic>
-          </div>
-        </Reveal>
+            </div>
+          </Reveal>
+        </div>
       </div>
     </section>
   )
