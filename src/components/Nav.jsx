@@ -73,10 +73,9 @@ export default function Nav() {
   const go = (e, href) => {
     e.preventDefault()
     setMenu(false)
+    startScroll() // the open menu stops Lenis, and a stopped Lenis ignores scrollTo
     scrollToTarget(href === '#top' ? 0 : href)
   }
-
-  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)
 
   const slide = { y: hidden ? '-140%' : '0%' }
   const slideT = { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
@@ -113,10 +112,6 @@ export default function Nav() {
         </nav>
 
         <div className="nav__right">
-          <button className="nav__k mono" onClick={() => setPalette(true)} aria-label="Open command menu" data-cursor-label="Menu">
-            <kbd>{isMac ? '⌘' : 'Ctrl'}</kbd>
-            <kbd>K</kbd>
-          </button>
           <Magnetic strength={0.25}>
             <a className="nav__cta mono" href="#contact" onClick={(e) => go(e, '#contact')}>
               <span className="live-dot live-dot--volt" /> Let’s talk

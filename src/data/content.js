@@ -229,7 +229,7 @@ export const WORK = [
 /** status: 'live' | 'internal' | 'shelved'  ·  href: where the live thing can be seen */
 export const ALSO = [
   {
-    name: 'Elyfin — TFM’s AI',
+    name: 'TFM AI',
     what: 'Guardrails for The Fat Money’s multilingual LangGraph + Gemini assistant: off-topic routing, prompt hardening, auth and health checks.',
     stack: 'LangGraph · Gemini · Node',
     year: '2026',
@@ -463,8 +463,8 @@ export const TOOLBELT = [
     group: 'AI',
     items: [
       { n: 'Ollama', where: 'MenderBit · Video Studio' },
-      { n: 'LangGraph', where: 'Elyfin AI' },
-      { n: 'Gemini', where: 'Elyfin AI' },
+      { n: 'LangGraph', where: 'TFM AI' },
+      { n: 'Gemini', where: 'TFM AI' },
       { n: 'Whisper', where: 'Voice Studio · Health Peek' },
       { n: 'Transformers', where: 'Health Peek' },
       { n: 'ComfyUI', where: 'Video Studio' },

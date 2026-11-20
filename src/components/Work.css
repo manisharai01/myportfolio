@@ -1,4 +1,4 @@
-.work { background: var(--ink); padding-bottom: clamp(80px, 10vw, 140px); }
+.work { background: var(--ink); padding-bottom: clamp(56px, 7vw, 110px); }
 
 /* ---------- the stack: every card pins, the next one slides over it ---------- */
 .work__stack { display: grid; grid-template-columns: minmax(0, 1fr); padding-bottom: 4vh; }
@@ -158,21 +158,80 @@
   .wcard__highlights p { font-size: 12.5px; }
 }
 
-/* ---------- single column (tablets & phones): name → visual → story → numbers ---------- */
+/* "Read the full story" — only single-column layouts have a compact card */
+.wcard__more {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 7px 0 18px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--acc) 40%, var(--line));
+  color: var(--bone);
+  font-size: 10.5px;
+  text-align: left;
+  transition: background 0.3s, border-color 0.3s;
+}
+.wcard__more:hover { background: color-mix(in srgb, var(--acc) 10%, transparent); border-color: var(--acc); }
+.wcard__more-i { position: relative; width: 32px; height: 32px; flex: none; border-radius: 50%; background: var(--acc); }
+.wcard__more-i::before,
+.wcard__more-i::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 1.5px;
+  background: var(--ink);
+  transform: translate(-50%, -50%);
+  transition: transform 0.45s var(--ease-out);
+}
+.wcard__more-i::after { transform: translate(-50%, -50%) rotate(90deg); }
+.wcard.is-open .wcard__more-i::after { transform: translate(-50%, -50%) rotate(0deg); }
+
+/* ---------- single column (tablets & phones) ----------
+   Compact by default: index → name → headline → a window onto the visual → numbers,
+   sized so the card fits one screen and the deck visibly stacks. The toggle opens
+   the story, role, highlights, stack and links in place. */
 @media (max-width: 1023px) {
-  .wcard { display: flex; flex-direction: column; gap: 16px; }
+  .wcard {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
   .wcard__info, .wcard__right { display: contents; }
   .wcard__top { order: 1; }
   .wcard__kicker { order: 2; margin-top: 2px; }
   .wcard__name { order: 3; }
   .wcard__headline { order: 4; }
-  .wcard__visual { order: 5; min-height: 0; margin: 6px 0; }
-  .wcard__summary { order: 6; }
-  .wcard__role { order: 7; }
-  .wcard__metrics { order: 8; margin-top: 4px; }
-  .wcard__highlights { order: 9; grid-template-columns: 1fr; }
-  .wcard__stack { order: 10; }
-  .wcard__links { order: 11; }
+  .wcard__visual { order: 5; min-height: 0; margin: 4px 0; }
+  .wcard__metrics { order: 6; margin-top: 2px; }
+  .wcard__more { order: 7; display: flex; }
+  .wcard__summary { order: 8; }
+  .wcard__role { order: 9; }
+  .wcard__highlights { order: 10; grid-template-columns: 1fr; }
+  .wcard__stack { order: 11; }
+  .wcard__links { order: 12; }
+
+  .wcard:not(.is-open) :is(.wcard__kicker, .wcard__summary, .wcard__role, .wcard__highlights, .wcard__stack, .wcard__links) { display: none; }
+  .wcard:not(.is-open) .wcard__visual {
+    /* how much of the visual shows while compact — sized so the whole card fits one screen */
+    height: clamp(140px, calc(100vh - 510px), 320px);
+    height: clamp(140px, calc(100svh - 510px), 320px);
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(180deg, #000 72%, transparent);
+    mask-image: linear-gradient(180deg, #000 72%, transparent);
+  }
+  .wcard:not(.is-open) .phone-stage { min-height: 0; align-items: start; }
+  .wcard:not(.is-open) .phone-side { display: none; }
+}
+@media (max-width: 1023px) and (min-width: 700px) {
+  .wcard:not(.is-open) .wcard__visual {
+    height: clamp(160px, calc(100vh - 560px), 440px);
+    height: clamp(160px, calc(100svh - 560px), 440px);
+  }
 }
 @media (max-width: 760px) and (min-width: 561px) {
   .wcard__highlights { grid-template-columns: 1fr 1fr; }
@@ -180,11 +239,12 @@
 @media (max-width: 560px) {
   .wcard { border-radius: 20px; padding: 16px; }
   .wcard__metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wcard__metrics > div { padding: 10px 11px 9px; }
   .wcard__years { margin-left: 0; }
 }
 
 /* ---------- more work ---------- */
-.also { margin-top: clamp(80px, 10vw, 140px); }
+.also { margin-top: clamp(56px, 7vw, 100px); }
 .also__label { color: var(--dim); margin-bottom: 18px; display: flex; gap: 12px; align-items: center; }
 .also__label::before { content: ''; width: 28px; height: 1px; background: currentColor; opacity: 0.6; }
 .also__list { border-top: 1px solid var(--line); }

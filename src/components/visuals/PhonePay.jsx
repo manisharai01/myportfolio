@@ -112,7 +112,7 @@ export default function PhonePay() {
             <span className={screen === 'bills' ? 'on' : ''}>Bills</span>
             <span className={screen === 'markets' ? 'on' : ''}>Markets</span>
             <span>Budget</span>
-            <span>Elyfin</span>
+            <span>TFM AI</span>
           </div>
         </div>
 

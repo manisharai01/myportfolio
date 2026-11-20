@@ -101,14 +101,22 @@
 .portrait__corner--br { right: -10px; bottom: -10px; border-width: 0 1px 1px 0; }
 .portrait figcaption {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 12px;
+  gap: 4px 12px;
   margin-top: 16px;
   color: var(--ink-mute);
 }
 
 @media (max-width: 860px) {
-  .about__grid { grid-template-columns: 1fr; }
-  .about__portrait { max-width: 420px; }
   .facts__row { grid-template-columns: 1fr; gap: 6px; }
+}
+/* tablets & landscape phones: portrait beside the facts instead of a half-empty row */
+@media (max-width: 860px) and (min-width: 600px) {
+  .about__grid { grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); gap: clamp(24px, 4vw, 40px); }
+  .about__intro { font-size: clamp(18px, 2.4vw, 22px); margin-bottom: 28px; }
+}
+@media (max-width: 599px) {
+  .about__grid { grid-template-columns: 1fr; }
+  .about__portrait { max-width: 440px; }
 }

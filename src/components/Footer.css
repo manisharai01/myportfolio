@@ -2,7 +2,7 @@
 .footer__cols { display: grid; grid-template-columns: 1fr 1fr 1.3fr 1.6fr; gap: 32px; }
 .footer__k { color: var(--mute); margin-bottom: 14px; }
 .footer__cols li { margin-bottom: 8px; color: var(--bone-2); }
-.footer__cols a { color: var(--bone-2); transition: color 0.3s; }
+.footer__cols a { display: inline-block; padding-block: 5px; margin-block: -5px; color: var(--bone-2); transition: color 0.3s; } /* bigger tap target, same layout */
 .footer__cols a:hover { color: var(--signal); }
 .footer__status li { display: flex; align-items: center; gap: 10px; }
 .footer__time { font-variant-numeric: tabular-nums; color: var(--bone); }
@@ -18,7 +18,7 @@
   border-top: 1px solid var(--line);
   color: var(--mute);
 }
-.footer__top { color: var(--bone); }
+.footer__top { display: inline-block; padding-block: 12px; margin-block: -12px; color: var(--bone); }
 .footer__top:hover { color: var(--signal); }
 .footer__mark {
   display: flex;

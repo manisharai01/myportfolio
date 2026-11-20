@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { TOOLBELT } from '../data/content'
 import { Reveal, SectionHead } from './ui/Primitives.jsx'
 import './Toolbelt.css'
@@ -16,9 +16,19 @@ function place(btn) {
 
 export default function Toolbelt() {
   const [hot, setHot] = useState(null)
+  // A tap fires focus and then click; without knowing it was a tap, focus would show
+  // the tooltip and the click would immediately toggle it off again.
+  const pointer = useRef('')
   const show = (id, btn) => {
     place(btn)
     setHot(id)
+  }
+  const tap = (id, btn) => {
+    const kind = pointer.current
+    pointer.current = ''
+    if (kind === 'mouse') return show(id, btn) // hover already shows it; a click keeps it
+    place(btn)
+    setHot((h) => (h === id ? null : id))
   }
   return (
     <section id="toolbelt" className="section toolbelt" aria-label="Toolbelt">
@@ -39,11 +49,12 @@ export default function Toolbelt() {
                       <button
                         type="button"
                         className={`tb__item ${on ? 'is-on' : ''}`}
+                        onPointerDown={(e) => (pointer.current = e.pointerType)}
                         onPointerEnter={(e) => e.pointerType === 'mouse' && show(id, e.currentTarget)}
                         onPointerLeave={(e) => e.pointerType === 'mouse' && setHot(null)}
-                        onFocus={(e) => show(id, e.currentTarget)}
+                        onFocus={(e) => !pointer.current && show(id, e.currentTarget)}
                         onBlur={() => setHot(null)}
-                        onClick={(e) => (on ? setHot(null) : show(id, e.currentTarget))}
+                        onClick={(e) => tap(id, e.currentTarget)}
                         aria-describedby={`${id}-where`}
                       >
                         <span className="tb__name" data-text={it.n}>

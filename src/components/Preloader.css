@@ -2,43 +2,67 @@
   position: fixed;
   inset: 0;
   z-index: 500;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  padding: 24px var(--gutter) 40px;
   background: var(--ink);
   color: var(--bone);
+  overflow: hidden;
 }
-.boot__top { display: flex; justify-content: space-between; color: var(--dim); }
-.boot__mid { display: flex; align-items: center; justify-content: flex-end; }
-.boot__count {
-  font-family: var(--font-mono);
-  font-weight: 200;
-  font-stretch: 112.5%;
-  font-size: clamp(110px, 24vw, 380px);
-  line-height: 0.8;
-  letter-spacing: -0.06em;
-  font-variant-numeric: tabular-nums;
+/* during the dissolve the canvas paints the ink itself (with holes in it) */
+.boot.is-leaving { background: transparent; pointer-events: none; }
+.boot__dots { position: absolute; inset: 0; display: block; }
+
+.boot__hud {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: 22px var(--gutter) 30px;
+  pointer-events: none;
+  transition: opacity 0.35s var(--ease-out);
 }
-.boot__log { display: grid; gap: 6px; max-width: 520px; }
+.boot.is-leaving .boot__hud { opacity: 0; }
+.boot__top { display: flex; justify-content: space-between; gap: 16px; color: var(--dim); }
+.boot__top > span { display: inline-flex; align-items: center; gap: 10px; }
+.boot__top .live-dot { width: 7px; height: 7px; }
+
+.boot__bottom { align-self: end; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+.boot__log { display: grid; gap: 5px; width: min(500px, 100%); }
 .boot__log li {
-  display: flex; align-items: baseline; gap: 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  color: var(--dim);
   opacity: 0;
   transform: translateY(6px);
   transition: opacity 0.4s, transform 0.5s var(--ease-out);
-  color: var(--dim);
 }
 .boot__log li.is-on { opacity: 1; transform: none; }
 .boot__t { color: var(--mute); }
-.boot__dots { flex: 1; border-bottom: 1px dotted var(--line-2); transform: translateY(-3px); }
-.boot__v { color: var(--bone); }
+.boot__dots-line { flex: 1; min-width: 12px; border-bottom: 1px dotted var(--line-2); transform: translateY(-3px); }
+.boot__v { color: var(--bone); white-space: nowrap; }
 .boot__log li:last-child .boot__v { color: var(--signal); }
+.boot__count { display: flex; align-items: baseline; gap: 4px; font-size: 13px; color: var(--bone); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.boot__of { color: var(--mute); }
+
 .boot__bar {
   position: absolute;
-  left: 0; right: 0; bottom: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   height: 3px;
   background: var(--signal);
+  transform: scaleX(0);
   transform-origin: left;
 }
+.boot.is-leaving .boot__bar { opacity: 0; transition: opacity 0.3s; }
+
 @media (max-width: 640px) {
-  .boot__mid { justify-content: flex-start; }
+  .boot__top .boot__ed { display: none; }
+  .boot__bottom { flex-direction: column; align-items: stretch; gap: 12px; }
+  .boot__count { justify-content: flex-end; }
+}
+/* short screens (landscape phones): only the latest log line */
+@media (max-height: 560px) {
+  .boot__log li:not(.is-on) { display: none; }
+  .boot__log li.is-on:not(:last-of-type) { display: none; }
+  .boot__log li.is-on:has(+ li:not(.is-on)) { display: flex; }
 }

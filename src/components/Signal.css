@@ -1,4 +1,6 @@
 .signal { background: var(--ink); border-top: 1px solid var(--line); }
+/* same ink as the work section above it, so it needs less air to read as a new chapter */
+.section.signal { padding-top: clamp(56px, 7vw, 110px); }
 
 .signal__stats {
   display: grid;

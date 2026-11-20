@@ -106,7 +106,9 @@ export default function CommandPalette({ open, onClose }) {
                 aria-autocomplete="list"
                 spellCheck="false"
               />
-              <kbd className="mono">esc</kbd>
+              <button type="button" className="cmdk__close" onClick={onClose} aria-label="Close menu">
+                ✕
+              </button>
             </div>
             <ul className="cmdk__list" id="cmdk-list" role="listbox" ref={listRef}>
               {results.length === 0 && <li className="cmdk__empty mono">No matches — try “email” or “work”.</li>}
@@ -131,11 +133,6 @@ export default function CommandPalette({ open, onClose }) {
                 )
               })}
             </ul>
-            <div className="cmdk__foot mono">
-              <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
-              <span><kbd>↵</kbd> run</span>
-              <span className="cmdk__brand">manisha.rai — cmd</span>
-            </div>
           </motion.div>
         </motion.div>
       )}

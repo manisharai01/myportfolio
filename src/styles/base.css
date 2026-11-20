@@ -178,7 +178,7 @@ html.is-booting, html.is-booting body { overflow: hidden; }
 .sw > span { display: inline-block; will-change: transform; }
 
 /* section scaffolding */
-.section { position: relative; padding-block: clamp(96px, 14vw, 200px); overflow-x: clip; }
+.section { position: relative; padding-block: clamp(72px, 9vw, 136px); overflow-x: clip; }
 .section--bone { background: var(--bone); color: var(--ink); color-scheme: light; }
 .section--bone ::selection { background: var(--ink); color: var(--bone); }
 

@@ -71,7 +71,8 @@
 .lcard__stack { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
 .lcard__stack li { padding: 4px 9px; border-radius: 999px; border: 1px solid rgba(185, 191, 220, 0.2); color: #b9bfdc; font-size: 9.5px; }
 .lcard__links { display: flex; gap: 16px; }
-.lcard__links a { display: inline-flex; align-items: center; gap: 6px; color: var(--bone); border-bottom: 1px solid rgba(237, 232, 223, 0.3); padding-bottom: 2px; font-size: 10.5px; }
+.lcard__links a { position: relative; display: inline-flex; align-items: center; gap: 6px; color: var(--bone); border-bottom: 1px solid rgba(237, 232, 223, 0.3); padding-bottom: 2px; font-size: 10.5px; }
+.lcard__links a::before { content: ''; position: absolute; inset: -12px -8px; } /* finger-sized hit area */
 .lcard__links a:hover { color: var(--gold); border-color: var(--gold); }
 
 /* previews */

@@ -1,6 +1,8 @@
-import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion'
 import { ALSO, WORK } from '../data/content'
+import { getLenis, staticTop } from '../lib/scroll'
 import { ArrowUpRight, Reveal, SectionHead } from './ui/Primitives.jsx'
 import Departures from './visuals/Departures.jsx'
 import Scoring from './visuals/Scoring.jsx'
@@ -19,11 +21,33 @@ const VISUALS = { departures: Departures, scoring: Scoring, phone: PhonePay, lev
  * so a card shorter than the screen sticks near the top like a deck, and a taller
  * card sticks by its bottom edge once you've read it. Either way the next card
  * slides over it, and nothing is ever cut off.
+ *
+ * Single-column screens (tablets, phones) get a compact card — name, a window onto
+ * the visual and the numbers — so every card fits the screen and the deck really
+ * stacks; "Read the full story" opens the rest in place.
  */
 function WorkCard({ w, i, selfRef, nextRef }) {
   const Visual = VISUALS[w.visual]
   const reduce = useReducedMotion()
   const articleRef = useRef(null)
+  const [open, setOpen] = useState(false)
+  const ids = ['summary', 'role', 'highlights', 'stack', 'links'].map((k) => `work-${w.id}-${k}`)
+
+  // Expanding/collapsing changes the card's height, which changes where a sticky card
+  // sits. Re-anchor the scroll so the card stays exactly where the reader's eye is.
+  const toggle = () => {
+    const wrap = selfRef.current
+    const next = !open
+    if (!wrap) return setOpen(next)
+    const before = wrap.getBoundingClientRect().top
+    flushSync(() => setOpen(next))
+    const pin = 14 + i * 12
+    const keep = next || before > 0 ? before : pin
+    const y = Math.max(0, staticTop(wrap) - keep)
+    const lenis = getLenis()
+    if (lenis) lenis.scrollTo(y, { immediate: true, force: true })
+    else window.scrollTo(0, y)
+  }
 
   useLayoutEffect(() => {
     const art = articleRef.current
@@ -48,7 +72,7 @@ function WorkCard({ w, i, selfRef, nextRef }) {
       <motion.article
         ref={articleRef}
         id={`work-${w.id}`}
-        className="wcard"
+        className={`wcard ${open ? 'is-open' : ''}`}
         style={{ scale: covered ? scale : 1, '--acc': w.accent, '--tint': w.tint }}
         aria-labelledby={`work-${w.id}-title`}
       >
@@ -65,8 +89,10 @@ function WorkCard({ w, i, selfRef, nextRef }) {
             {w.name}
           </h3>
           <p className="wcard__headline">{w.headline}</p>
-          <p className="wcard__summary">{w.summary}</p>
-          <p className="wcard__role">
+          <p className="wcard__summary" id={ids[0]}>
+            {w.summary}
+          </p>
+          <p className="wcard__role" id={ids[1]}>
             <span className="mono">My part</span> {w.role}
           </p>
           <dl className="wcard__metrics">
@@ -77,8 +103,12 @@ function WorkCard({ w, i, selfRef, nextRef }) {
               </div>
             ))}
           </dl>
+          <button type="button" className="wcard__more mono" onClick={toggle} aria-expanded={open} aria-controls={(w.links ? ids : ids.slice(0, 4)).join(' ')}>
+            <span>{open ? 'Hide the details' : 'Read the full story'}</span>
+            <span className="wcard__more-i" aria-hidden="true" />
+          </button>
           {w.links && (
-            <div className="wcard__links">
+            <div className="wcard__links" id={ids[4]}>
               {w.links.map((l) => (
                 <a key={l.href} href={l.href} target="_blank" rel="noreferrer" className="wcard__link mono" data-cursor="label" data-cursor-label="Open">
                   {l.label} <ArrowUpRight width={12} height={12} />
@@ -91,7 +121,7 @@ function WorkCard({ w, i, selfRef, nextRef }) {
           <div className="wcard__visual">
             <Visual />
           </div>
-          <ul className="wcard__highlights">
+          <ul className="wcard__highlights" id={ids[2]}>
             {w.highlights.map((h, k) => (
               <motion.li
                 key={k}
@@ -105,7 +135,7 @@ function WorkCard({ w, i, selfRef, nextRef }) {
               </motion.li>
             ))}
           </ul>
-          <ul className="wcard__stack" aria-label="Stack">
+          <ul className="wcard__stack" aria-label="Stack" id={ids[3]}>
             {w.stack.map((s) => (
               <li key={s} className="chip">
                 {s}

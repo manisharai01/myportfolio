@@ -13,7 +13,7 @@
   width: min(640px, 100%);
   max-height: 70vh;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
   border-radius: 18px;
   background: rgba(22, 21, 19, 0.96);
@@ -38,6 +38,19 @@
   color: var(--bone);
 }
 .cmdk__search input::placeholder { color: var(--mute); }
+.cmdk__close {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  color: var(--dim);
+  font-size: 12px;
+  transition: color 0.3s, border-color 0.3s;
+}
+.cmdk__close:hover { color: var(--bone); border-color: var(--bone); }
 .cmdk__list { overflow-y: auto; padding: 8px; overscroll-behavior: contain; }
 .cmdk__group { padding: 12px 12px 6px; color: var(--mute); font-size: 10px; }
 .cmdk__item {
@@ -62,16 +75,3 @@
 .cmdk__item > span:first-child { flex: 1; }
 .cmdk__hint { font-size: 10px; color: var(--mute); text-align: right; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cmdk__empty { padding: 24px 12px; color: var(--mute); }
-.cmdk__foot {
-  display: flex;
-  gap: 18px;
-  padding: 10px 16px;
-  border-top: 1px solid var(--line);
-  color: var(--mute);
-  font-size: 10px;
-}
-.cmdk__foot kbd { margin-right: 4px; }
-.cmdk__brand { margin-left: auto; }
-@media (max-width: 560px) {
-  .cmdk__foot span:not(.cmdk__brand) { display: none; }
-}

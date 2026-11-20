@@ -57,7 +57,7 @@
   position: absolute;
   left: 0;
   bottom: 0.2em;
-  width: min(44%, 640px);
+  width: var(--copy-w, min(44%, 640px)); /* --copy-w: the measured pocket left of "RAI" */
   padding-bottom: 4px;
   isolation: isolate;
 }
@@ -89,6 +89,15 @@
 }
 .hero__ctas { display: flex; flex-wrap: wrap; gap: 10px; }
 .hero__proof { margin-top: 14px; color: var(--dim); }
+@media (min-width: 1000px) {
+  .hero__lede { max-width: 46ch; }
+}
+/* the copy didn't fit the pocket under "MANISHA": step it down */
+.hero__stage.is-tight .hero__proof { display: none; }
+.hero__stage.is-tight .hero__lede { margin-bottom: 14px; }
+.hero__stage.is-tighter .hero__tagline { font-size: clamp(24px, 2.3vw, 38px); margin-bottom: 8px; }
+.hero__stage.is-tighter .hero__lede { font-size: 15px; line-height: 1.4; max-width: 52ch; margin-bottom: 12px; }
+.hero__stage.is-tighter .hero__ctas .btn { height: 44px; padding: 0 18px; }
 
 /* name */
 .kn {

@@ -26,6 +26,7 @@ export default function Portrait({ step = 6, className = '' }) {
     let lastActive = 0
     let intro = reduce ? 1 : 0
     let introStart = null
+    let dir = 1 // 1: dots swell in top → bottom (scrolling down), -1: bottom → top (scrolling up)
     const ptr = { x: -9999, y: -9999, inside: false }
 
     const build = () => {
@@ -121,8 +122,9 @@ export default function Portrait({ step = 6, className = '' }) {
       let moving = false
       const R = 70
       for (const p of dots) {
-        // intro: dots swell in, top to bottom with a little randomness
-        const k = Math.min(1, Math.max(0, intro * 1.8 - (p.y / cssH) * 0.8 - p.d * 0.15))
+        // intro: dots swell in along the scroll direction, with a little randomness
+        const along = dir > 0 ? p.y / cssH : 1 - p.y / cssH
+        const k = Math.min(1, Math.max(0, intro * 1.8 - along * 0.8 - p.d * 0.15))
         let tx = 0, ty = 0, th = 0
         if (ptr.inside) {
           const dx = p.x - ptr.x
@@ -147,7 +149,7 @@ export default function Portrait({ step = 6, className = '' }) {
         ctx.arc(p.x + p.ox, p.y + p.oy, rad * (1 + p.heat * 0.25), 0, Math.PI * 2)
         ctx.fill()
       }
-      return moving || intro < 1
+      return moving || (introStart !== null && intro < 1)
     }
 
     const loop = (now) => {
@@ -177,12 +179,25 @@ export default function Portrait({ step = 6, className = '' }) {
     canvas.addEventListener('pointermove', onMove)
     canvas.addEventListener('pointerleave', onLeave)
 
+    // Replays every time the portrait comes back on screen, from whichever edge it enters.
     const io = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && introStart === null && !reduce) {
+      if (reduce) return
+      if (!e.isIntersecting) {
+        // fully off screen: blank it so the next entrance prints it again
+        if (introStart !== null) {
+          introStart = null
+          intro = 0
+          ptr.inside = false
+          draw(performance.now())
+        }
+        return
+      }
+      if (e.intersectionRatio >= 0.25 && introStart === null) {
+        dir = e.boundingClientRect.top >= 0 ? 1 : -1
         introStart = performance.now()
         wake()
       }
-    }, { threshold: 0.25 })
+    }, { threshold: [0, 0.25] })
     io.observe(canvas)
 
     img.onload = build
