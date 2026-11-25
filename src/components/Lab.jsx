@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { LAB, SIGNAL } from '../data/content'
+import { LAB } from '../data/content'
+import { useSignal } from '../lib/signal'
 import { ArrowUpRight, Reveal, SectionHead } from './ui/Primitives.jsx'
 import { useLoop } from './visuals/Screen.jsx'
 import './Lab.css'
@@ -164,6 +165,7 @@ function Spell() {
 const PREVIEWS = { agent: Agent, film: Film, lint: Lint, mood: Mood, wave: Wave, bars: Bars, limit: Limit, spell: Spell }
 
 export default function Lab() {
+  const signal = useSignal()
   return (
     <section id="lab" className="section lab" aria-label="Lab — personal projects">
       <div className="lab__glow" aria-hidden="true" />
@@ -171,7 +173,7 @@ export default function Lab() {
         <SectionHead
           label="04 — Lab / after hours"
           title={['After', 'hours']}
-          aside={`${Math.round(SIGNAL.outsideShare * 100)}% of my commits land outside 9-to-6. Some become these: local-first AI, developer tools, and apps I wanted to exist.`}
+          aside={`${Math.round(signal.outsideShare * 100)}% of my commits land outside 9-to-6. Some become these: local-first AI, developer tools, and apps I wanted to exist.`}
         />
         <div className="lab__grid">
           {LAB.map((p, i) => {

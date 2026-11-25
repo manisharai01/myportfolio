@@ -30,6 +30,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # newest git stats from the `stats` branch (kept current by scripts/publish-stats.mjs)
+      - name: Bake in latest git stats
+        run: node scripts/bake-stats.mjs
+
       - name: Build
         run: npm run build
 

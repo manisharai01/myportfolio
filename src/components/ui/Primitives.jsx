@@ -125,16 +125,30 @@ export function Magnetic({ children, strength = 0.35, className }) {
   )
 }
 
-/** Counts up to `value` when visible. Keeps the final string's formatting. */
+/** Counts up to `value` when visible. Keeps the final string's formatting.
+ *  If `value` changes later (fresher stats), it rolls on from the number on screen. */
 export function Counter({ value, duration = 1.8, className, prefix = '', suffix = '' }) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '0px 0px -10% 0px' })
   const reduce = useReducedMotion()
   const target = Number(String(value).replace(/[^0-9.]/g, ''))
   const [n, setN] = useState(reduce ? target : 0)
+  const shown = useRef(n)
   useEffect(() => {
-    if (!inView || reduce) return
-    const c = animate(0, target, { duration, ease: [0.22, 1, 0.36, 1], onUpdate: (v) => setN(v) })
+    if (reduce) {
+      shown.current = target
+      setN(target)
+      return
+    }
+    if (!inView) return
+    const c = animate(shown.current, target, {
+      duration,
+      ease: [0.22, 1, 0.36, 1],
+      onUpdate: (v) => {
+        shown.current = v
+        setN(v)
+      },
+    })
     return () => c.stop()
   }, [inView, target, duration, reduce])
   return (

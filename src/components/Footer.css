@@ -6,6 +6,7 @@
 .footer__cols a:hover { color: var(--signal); }
 .footer__status li { display: flex; align-items: center; gap: 10px; }
 .footer__time { font-variant-numeric: tabular-nums; color: var(--bone); }
+.footer__d { white-space: nowrap; } /* a date range only breaks between its two dates */
 .footer__colophon { color: var(--dim); font-size: 15px; line-height: 1.6; max-width: 42ch; }
 .footer__bar {
   display: flex;

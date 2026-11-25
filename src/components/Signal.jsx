@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
-import { SIGNAL } from '../data/content'
+import { fmtDay, useSignal } from '../lib/signal'
 import { Counter, Reveal, SectionHead } from './ui/Primitives.jsx'
 import './Signal.css'
 
@@ -10,11 +10,12 @@ const level = (c) => (c === 0 ? 0 : c <= 2 ? 1 : c <= 5 ? 2 : c <= 9 ? 3 : 4)
 const fmtDate = (d) => `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`
 
 function Heatmap() {
+  const signal = useSignal()
   const wrapRef = useRef(null)
   const inView = useInView(wrapRef, { once: true, margin: '0px 0px -15% 0px' })
   const [tip, setTip] = useState(null)
-  const start = Date.parse(SIGNAL.start + 'T00:00:00Z')
-  const weeks = Math.ceil(SIGNAL.series.length / 7)
+  const start = Date.parse(signal.start + 'T00:00:00Z')
+  const weeks = Math.ceil(signal.series.length / 7)
   const C = 12
   const G = 3
   const W = weeks * (C + G)
@@ -34,10 +35,10 @@ function Heatmap() {
   }, [start, weeks])
 
   useEffect(() => {
-    // on narrow screens, start scrolled to the most recent weeks
+    // on narrow screens, start scrolled to the most recent weeks (again if fresher stats add one)
     const el = wrapRef.current
     if (el && el.scrollWidth > el.clientWidth) el.scrollLeft = el.scrollWidth
-  }, [])
+  }, [weeks])
 
   const onMove = (e) => {
     const t = e.target
@@ -45,12 +46,12 @@ function Heatmap() {
     const i = +t.dataset.i
     const r = t.getBoundingClientRect()
     const host = wrapRef.current.getBoundingClientRect()
-    setTip({ x: r.left - host.left + r.width / 2 + wrapRef.current.scrollLeft, y: r.top - host.top, n: SIGNAL.series[i], d: fmtDate(new Date(start + i * DAY)) })
+    setTip({ x: r.left - host.left + r.width / 2 + wrapRef.current.scrollLeft, y: r.top - host.top, n: signal.series[i], d: fmtDate(new Date(start + i * DAY)) })
   }
 
   return (
     <div className="hm-wrap" ref={wrapRef} onMouseLeave={() => setTip(null)} data-lenis-prevent-horizontal>
-      <svg className={`heat ${inView ? 'is-in' : ''}`} viewBox={`-30 0 ${W + 30} ${H}`} style={{ minWidth: 980 }} onMouseMove={onMove} role="img" aria-label={`Commit heatmap: ${SIGNAL.commits} commits on ${SIGNAL.activeDays} active days since ${SIGNAL.first}`}>
+      <svg className={`heat ${inView ? 'is-in' : ''}`} viewBox={`-30 0 ${W + 30} ${H}`} style={{ minWidth: 980 }} onMouseMove={onMove} role="img" aria-label={`Commit heatmap: ${signal.commits} commits on ${signal.activeDays} active days since ${signal.first}`}>
         {months.map((m) => (
           <text key={m.w} x={m.w * (C + G)} y={10} className="heat__month">
             {m.label}
@@ -61,7 +62,7 @@ function Heatmap() {
             {d}
           </text>
         ))}
-        {SIGNAL.series.map((c, i) => {
+        {signal.series.map((c, i) => {
           const w = Math.floor(i / 7)
           const d = i % 7
           return (
@@ -89,9 +90,10 @@ function Heatmap() {
 }
 
 function Clock() {
+  const signal = useSignal()
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '0px 0px -10% 0px' })
-  const max = Math.max(...SIGNAL.hours)
+  const max = Math.max(...signal.hours)
   const R0 = 46
   const R1 = 100
   const arc = (a0, a1, r) => {
@@ -106,13 +108,13 @@ function Clock() {
       <figcaption>
         <p className="mono panel__k">When I ship</p>
         <p className="panel__v">
-          Peak at <b>{String(SIGNAL.peakHour).padStart(2, '0')}:00</b> IST
+          Peak at <b>{String(signal.peakHour).padStart(2, '0')}:00</b> IST
         </p>
       </figcaption>
-      <svg viewBox="0 0 220 220" className="clock__svg" role="img" aria-label={`Commits by hour of day, peaking at ${SIGNAL.peakHour}:00`}>
+      <svg viewBox="0 0 220 220" className="clock__svg" role="img" aria-label={`Commits by hour of day, peaking at ${signal.peakHour}:00`}>
         <path d={arc(A(9), A(18), 106)} className="clock__office" />
         <circle cx="110" cy="110" r={R0 - 6} className="clock__face" />
-        {SIGNAL.hours.map((v, h) => {
+        {signal.hours.map((v, h) => {
           const a = A(h + 0.5)
           const len = (v / max) * (R1 - R0)
           const x0 = 110 + R0 * Math.sin(a)
@@ -126,7 +128,7 @@ function Clock() {
               y1={y0}
               x2={x1}
               y2={y1}
-              className={`clock__bar ${h === SIGNAL.peakHour ? 'is-peak' : ''} ${h < 9 || h >= 18 ? 'is-after' : ''}`}
+              className={`clock__bar ${h === signal.peakHour ? 'is-peak' : ''} ${h < 9 || h >= 18 ? 'is-after' : ''}`}
               initial={{ pathLength: 0 }}
               animate={inView ? { pathLength: 1 } : {}}
               transition={{ duration: 0.9, delay: 0.2 + h * 0.03, ease: [0.16, 1, 0.3, 1] }}
@@ -140,27 +142,28 @@ function Clock() {
         ))}
       </svg>
       <p className="mono panel__foot">
-        <span className="swatch swatch--office" /> 9–6 office hours · <b>{Math.round(SIGNAL.outsideShare * 100)}%</b> of commits land outside them
+        <span className="swatch swatch--office" /> 9–6 office hours · <b>{Math.round(signal.outsideShare * 100)}%</b> of commits land outside them
       </p>
     </figure>
   )
 }
 
 function Week() {
+  const signal = useSignal()
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '0px 0px -10% 0px' })
-  const max = Math.max(...SIGNAL.dows)
+  const max = Math.max(...signal.dows)
   const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   return (
     <figure className="panel week" ref={ref}>
       <figcaption>
         <p className="mono panel__k">Shape of a week</p>
         <p className="panel__v">
-          <b>{Math.round(SIGNAL.weekendShare * 100)}%</b> on weekends
+          <b>{Math.round(signal.weekendShare * 100)}%</b> on weekends
         </p>
       </figcaption>
       <div className="week__bars">
-        {SIGNAL.dows.map((v, i) => (
+        {signal.dows.map((v, i) => (
           <div key={i} className={`week__col ${i >= 5 ? 'is-weekend' : ''}`}>
             <span className="mono week__n">{v}</span>
             <motion.span
@@ -174,16 +177,17 @@ function Week() {
         ))}
       </div>
       <p className="mono panel__foot">
-        Busiest on {['Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays', 'Sundays'][SIGNAL.dows.indexOf(Math.max(...SIGNAL.dows))]} · Saturdays stay busy · Sundays mostly rest
+        Busiest on {['Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays', 'Sundays'][signal.dows.indexOf(Math.max(...signal.dows))]} · Saturdays stay busy · Sundays mostly rest
       </p>
     </figure>
   )
 }
 
 function Langs() {
+  const signal = useSignal()
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '0px 0px -10% 0px' })
-  const top = SIGNAL.langs.slice(0, 6)
+  const top = signal.langs.slice(0, 6)
   const other = 1 - top.reduce((s, l) => s + l.share, 0)
   const rows = [...top, { name: 'Other', share: other }]
   return (
@@ -221,20 +225,21 @@ function Langs() {
 }
 
 export default function Signal() {
+  const signal = useSignal()
   return (
     <section id="signal" className="section signal" aria-label="Signal — commit history">
       <div className="container">
         <SectionHead
           label="02 — Signal"
-          title={[SIGNAL.commits.toLocaleString('en-IN'), 'commits later']}
-          aside={`Every square is a day since February 2025 — pulled straight from git across ${SIGNAL.repos} repositories, work and personal. No estimates.`}
+          title={[signal.commits.toLocaleString('en-IN'), 'commits later']}
+          aside={`Every square is a day since February 2025 — pulled straight from git across ${signal.repos} repositories, work and personal. No estimates.`}
         />
         <div className="signal__stats">
           {[
-            { v: SIGNAL.commits, k: 'Commits', note: `incl. merges · ${SIGNAL.nonMerge.toLocaleString('en-IN')} without` },
-            { v: SIGNAL.activeDays, k: 'Active days', note: `since ${SIGNAL.first.slice(0, 7)}` },
-            { v: SIGNAL.repos, k: 'Repositories', note: `${SIGNAL.reposWork} work · ${SIGNAL.reposPersonal} personal` },
-            { v: SIGNAL.bestStreak, k: 'Day best streak', note: 'consecutive' },
+            { v: signal.commits, k: 'Commits', note: `incl. merges · ${signal.nonMerge.toLocaleString('en-IN')} without` },
+            { v: signal.activeDays, k: 'Active days', note: `since ${signal.first.slice(0, 7)}` },
+            { v: signal.repos, k: 'Repositories', note: `${signal.reposWork} work · ${signal.reposPersonal} personal` },
+            { v: signal.bestStreak, k: 'Day best streak', note: 'consecutive' },
           ].map((s, i) => (
             <Reveal key={s.k} delay={i * 0.06} className="stat">
               <Counter value={s.v} className="stat__v" />
@@ -252,7 +257,9 @@ export default function Signal() {
             <i key={l} className={`heat__c l${l}`} />
           ))}
           <span>More</span>
-          <span className="heat__src">Source: git log · regenerated with scripts/collect-stats.mjs · {SIGNAL.generated}</span>
+          <span className="heat__src">
+            Source: git log · {fmtDay(signal.first)} → {fmtDay(signal.last)}
+          </span>
         </div>
         <div className="signal__panels">
           <Clock />

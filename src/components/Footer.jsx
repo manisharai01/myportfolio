@@ -1,15 +1,11 @@
-import { NAV, PROFILE, SIGNAL } from '../data/content'
+import { NAV, PROFILE } from '../data/content'
 import { LiveTime } from './ui/Primitives.jsx'
 import { scrollToTarget } from '../lib/scroll'
+import { fmtDay, useSignal } from '../lib/signal'
 import './Footer.css'
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const pretty = (iso) => {
-  const [y, m, d] = iso.split('-').map(Number)
-  return `${d} ${MONTHS[m - 1]} ${y}`
-}
-
 export default function Footer() {
+  const signal = useSignal()
   const go = (e, href) => {
     e.preventDefault()
     scrollToTarget(href === '#top' ? 0 : href)
@@ -43,7 +39,11 @@ export default function Footer() {
             <ul className="footer__status">
               <li><span className="live-dot live-dot--volt" /> {PROFILE.status}</li>
               <li>Gurugram — <LiveTime className="footer__time" /> IST</li>
-              <li>Last commit — {pretty(SIGNAL.last)}</li>
+              <li>
+                <span>
+                  Git log — <span className="footer__d">{fmtDay(signal.first)}</span> <span className="footer__d">→ {fmtDay(signal.last)}</span>
+                </span>
+              </li>
             </ul>
           </div>
           <div>

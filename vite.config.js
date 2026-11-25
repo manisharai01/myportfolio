@@ -1,5 +1,20 @@
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+
+/** Fills {{commits}} / {{repos}} in index.html's meta tags from the bundled git stats. */
+const gitStatsInHtml = {
+  name: 'git-stats-in-html',
+  transformIndexHtml: {
+    order: 'pre',
+    handler(html) {
+      const s = JSON.parse(readFileSync(new URL('./src/data/signal.json', import.meta.url), 'utf8'))
+      return html
+        .replaceAll('{{commits}}', `${(Math.floor(s.commits / 100) * 100).toLocaleString('en-IN')}+`)
+        .replaceAll('{{repos}}', String(s.reposWork + s.reposPersonal))
+    },
+  },
+}
 
 /**
  * Fontsource declares variable fonts with format('woff2-variations'). WebKit builds that
@@ -18,7 +33,7 @@ const portableVariableFonts = {
 }
 
 export default defineConfig({
-  plugins: [portableVariableFonts, react()],
+  plugins: [portableVariableFonts, gitStatsInHtml, react()],
   base: './',
   server: { port: 5173, open: true },
 })

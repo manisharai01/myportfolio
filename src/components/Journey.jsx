@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useInView, useMotionValueEvent, useReducedMotion, useScroll } from 'framer-motion'
-import { CERTS, RELEASES, SIGNAL } from '../data/content'
+import { CERTS, RELEASES } from '../data/content'
 import { useViewportKey } from '../lib/hooks'
+import { useSignal } from '../lib/signal'
 import { Reveal, SectionHead } from './ui/Primitives.jsx'
 import './Journey.css'
 
@@ -14,12 +15,13 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const mIndex = (y, m) => (y - T0.y) * 12 + (m - T0.m)
 
 function useTrack() {
+  const signal = useSignal()
   return useMemo(() => {
-    const last = new Date(SIGNAL.last + 'T00:00:00Z')
+    const last = new Date(signal.last + 'T00:00:00Z')
     const total = mIndex(last.getUTCFullYear(), last.getUTCMonth()) + 1
     const counts = new Array(total).fill(0)
-    const start = Date.parse(SIGNAL.start + 'T00:00:00Z')
-    SIGNAL.series.forEach((c, i) => {
+    const start = Date.parse(signal.start + 'T00:00:00Z')
+    signal.series.forEach((c, i) => {
       if (!c) return
       const d = new Date(start + i * 86400000)
       const k = mIndex(d.getUTCFullYear(), d.getUTCMonth())
@@ -37,8 +39,8 @@ function useTrack() {
     for (let y = T0.y + 1; y <= last.getUTCFullYear(); y++) years.push({ y, x: x(mIndex(y, 0)) - (0.5 * (1 - PRE)) / total })
     const peak = counts.indexOf(max)
     const peakLabel = `${MONTHS[(T0.m + peak) % 12]} ${T0.y + Math.floor((T0.m + peak) / 12)}`
-    return { bars, pins, years, total, max, peakLabel }
-  }, [])
+    return { bars, pins, years, total, max, peakLabel, commits: signal.commits }
+  }, [signal])
 }
 
 function Track({ track, active, trackRef, lit = false }) {
@@ -69,7 +71,7 @@ function Track({ track, active, trackRef, lit = false }) {
       ))}
       {!lit && <span className="trk__ph" />}
       <span className="trk__note mono">
-        <b>{SIGNAL.commits.toLocaleString('en-IN')}</b> commits · peak {track.peakLabel}
+        <b>{track.commits.toLocaleString('en-IN')}</b> commits · peak {track.peakLabel}
       </span>
     </div>
   )
@@ -180,7 +182,8 @@ function Pinned({ track, stageRef }) {
     }
   }
   useMotionValueEvent(scrollYProgress, 'change', sync)
-  useEffect(() => sync(scrollYProgress.get()), []) // eslint-disable-line react-hooks/exhaustive-deps
+  // again when fresher stats move the pins
+  useEffect(() => sync(scrollYProgress.get()), [track]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const r = RELEASES[active]
   return (

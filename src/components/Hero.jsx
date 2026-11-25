@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useLayoutEffect, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import ShaderField from './ShaderField.jsx'
 import KineticName from './KineticName.jsx'
@@ -6,7 +6,8 @@ import Ticker from './Ticker.jsx'
 import { ArrowDown, LiveTime, Magnetic } from './ui/Primitives.jsx'
 import { useBootReady } from '../lib/boot'
 import { scrollToTarget } from '../lib/scroll'
-import { PROFILE, SIGNAL, TICKER } from '../data/content'
+import { useSignal } from '../lib/signal'
+import { PROFILE, ticker } from '../data/content'
 import './Hero.css'
 
 const EASE = [0.16, 1, 0.3, 1]
@@ -62,6 +63,8 @@ export default function Hero() {
   const stageRef = useRef(null)
   const copyRef = useRef(null)
   useCopyPocket(stageRef, copyRef)
+  const signal = useSignal()
+  const tape = useMemo(() => ticker(signal), [signal])
   const go = (e, id) => {
     e.preventDefault()
     scrollToTarget(id)
@@ -106,12 +109,12 @@ export default function Hero() {
               </Magnetic>
             </motion.div>
             <motion.p className="hero__proof mono" variants={fade(7)}>
-              {SIGNAL.commits.toLocaleString('en-IN')} commits · {SIGNAL.repos} repos · 2 live store apps
+              {signal.commits.toLocaleString('en-IN')} commits · {signal.repos} repos · 2 live store apps
             </motion.p>
           </motion.div>
         </div>
       </div>
-      <Ticker items={TICKER} />
+      <Ticker items={tape} />
     </section>
   )
 }

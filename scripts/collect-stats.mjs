@@ -8,7 +8,9 @@
  * identities never reach the public repo). The output contains aggregates
  * only — no repository names, messages, or file paths.
  *
- *   node scripts/collect-stats.mjs
+ *   node scripts/collect-stats.mjs                  → src/data/signal.json
+ *   node scripts/collect-stats.mjs --out <file>     → anywhere else (publish-stats.mjs uses this)
+ *   add --quiet to skip the summary
  *
  * stats.config.json shape:
  * {
@@ -21,10 +23,14 @@
  */
 import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
-import { join, dirname } from 'node:path'
+import { join, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
+const argv = process.argv.slice(2)
+const outAt = argv.indexOf('--out')
+const OUT = outAt >= 0 && argv[outAt + 1] ? resolve(argv[outAt + 1]) : join(here, '..', 'src', 'data', 'signal.json')
+const QUIET = argv.includes('--quiet')
 const configPath = join(here, 'stats.config.json')
 if (!existsSync(configPath)) {
   console.error('Missing scripts/stats.config.json — see the header of this file.')
@@ -75,11 +81,23 @@ const touched = { work: new Set(), personal: new Set() }
 let commits = 0, merges = 0, work = 0, outside = 0, weekend = 0, added = 0
 let first = null, last = null
 
+// Let git drop everyone else's commits before it diffs them (most of the run time on big
+// shared repos). Fixed, case-insensitive substrings of the raw identity (no mailmap, the
+// same identity %an/%ae report), so this only ever keeps a superset; the exact check below
+// still decides what counts.
+const MINE = ['--no-use-mailmap', '-i', '-F', ...[...cfg.names, ...cfg.emails].map((p) => `--author=${p}`)]
+
+// This repo's `stats` branch holds publish-stats.mjs's own data commits. Counting them would
+// make every publish add a commit to the next one, forever.
+const SELF = resolve(here, '..').toLowerCase()
+const NOT_STATS = ['--exclude=stats', '--branches', '--exclude=*/stats', '--remotes']
+
 for (const r of repos) {
   let out
+  const refs = resolve(r.path).toLowerCase() === SELF ? NOT_STATS : ['--branches', '--remotes']
   try {
     // branches + remotes + tags: every real commit, merges included, but not stash entries
-    out = execFileSync('git', ['-C', r.path, 'log', '--branches', '--remotes', '--tags', '--format=@@@%H|%P|%an|%ae|%aI', '--numstat'], {
+    out = execFileSync('git', ['-C', r.path, 'log', ...refs, '--tags', ...MINE, '--format=@@@%H|%P|%an|%ae|%aI', '--numstat'], {
       encoding: 'utf8',
       maxBuffer: 1024 * 1024 * 1024,
     })
@@ -119,6 +137,11 @@ for (const r of repos) {
   }
 }
 
+if (!commits) {
+  console.error('No matching commits found — check roots, names and emails in scripts/stats.config.json.')
+  process.exit(1)
+}
+
 // one count per day from the first Monday on/before `first` to `last`
 const start = new Date(first + 'T00:00:00Z')
 start.setUTCDate(start.getUTCDate() - ((start.getUTCDay() + 6) % 7))
@@ -135,8 +158,11 @@ const langMix = Object.entries(langs)
   .sort((a, b) => b[1] - a[1])
   .map(([name, loc]) => ({ name, share: +(loc / totalLoc).toFixed(4) }))
 
+const now = new Date()
 const result = {
-  generated: new Date().toISOString().slice(0, 10),
+  // the day in local time (IST), like every other date in here; updatedAt is the exact moment
+  generated: new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10),
+  updatedAt: now.toISOString(),
   start: start.toISOString().slice(0, 10),
   first,
   last,
@@ -156,6 +182,8 @@ const result = {
   langs: langMix,
   series,
 }
-writeFileSync(join(here, '..', 'src', 'data', 'signal.json'), JSON.stringify(result) + '\n')
-const { series: _s, ...summary } = result
-console.log(summary)
+writeFileSync(OUT, JSON.stringify(result) + '\n')
+if (!QUIET) {
+  const { series: _s, ...summary } = result
+  console.log(summary)
+}

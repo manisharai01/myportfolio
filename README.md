@@ -22,7 +22,7 @@ Live: https://manisharai01.github.io/myportfolio/
   with `top: min(deck offset, 100svh − height)`. Short cards stick like a deck; tall cards stick by
   their bottom edge once read. The next card always slides over, and nothing is ever clipped.
 - **Signal.** A commit heatmap, a 24-hour commit clock and a language mix, all generated from real
-  `git log` data.
+  `git log` data and kept current automatically.
 - **Journey as release notes.** Roles ship as versions (v0.0 → v2.0) in a pinned, scroll-stepped
   stage:
   - an odometer version number
@@ -69,16 +69,31 @@ All copy lives in **`src/data/content.js`**:
 
 Components only render it.
 
-## Refreshing the git stats
+## Git stats (they update themselves)
 
-`src/data/signal.json` contains only aggregates: daily counts, hours, weekdays and language shares.
-No repository names, commit messages or paths are included. To regenerate it from your local repos:
+`signal.json` contains only aggregates: daily counts, hours, weekdays and language shares.
+No repository names, commit messages or paths are included.
 
-1. Create `scripts/stats.config.json`. It is git-ignored; the header of `scripts/collect-stats.mjs`
-   shows the format. List your repo folders and git identities in it.
-2. Run `npm run stats`.
+1. **Collect.** `scripts/collect-stats.mjs` runs read-only `git log` over the repos listed in
+   `scripts/stats.config.json`. That file is git-ignored; the script's header shows the format.
+2. **Publish.** `scripts/publish-stats.mjs` collects into `.signal/`. If the numbers changed, it
+   pushes just `signal.json` to the `stats` branch. It uses git plumbing, so your working tree and
+   `master` are never touched.
+3. **Show.** On load, the page fetches `signal.json` from the `stats` branch and swaps it in if it
+   is newer than the bundled copy (`src/lib/signal.js`). Offline, it keeps the bundled copy. Each
+   Pages build also bakes in the latest published copy (`scripts/bake-stats.mjs`).
 
-The script only runs read-only `git log` commands.
+| Command | What it does |
+|---|---|
+| `npm run stats:schedule` | Publish hourly via Windows Task Scheduler, while you're logged in |
+| `npm run stats:unschedule` | Remove that scheduled task |
+| `npm run stats:publish` | Publish now; add `-- --dry-run` to only compare |
+| `npm run stats` | Regenerate the bundled copy, `src/data/signal.json` |
+| `npm run stats:bake` | Copy the published stats into `src/data/signal.json` |
+
+Each scheduled run adds one line to `.signal/refresh.log`. If the commit count suddenly drops by
+more than 10% (say a repo folder moved), the publisher refuses and logs why;
+`npm run stats:publish -- --force` overrides it.
 
 ## Stack
 

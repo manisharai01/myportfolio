@@ -1,8 +1,8 @@
 /**
  * Everything the site says lives here. Edit freely — components only render it.
- * Numbers in SIGNAL come from git (scripts/collect-stats.mjs → signal.json).
+ * Git numbers (commits, repos, streaks…) are live: they come from signal.json and refresh
+ * on their own (src/lib/signal.js, scripts/publish-stats.mjs), so they aren't typed here.
  */
-import signal from './signal.json'
 
 export const PROFILE = {
   name: 'Manisha Rai',
@@ -23,22 +23,18 @@ export const PROFILE = {
 }
 
 const fmt = (n) => n.toLocaleString('en-IN')
-export const SIGNAL = {
-  ...signal,
-  repos: signal.reposWork + signal.reposPersonal,
-  peakHour: signal.hours.indexOf(Math.max(...signal.hours)),
-}
 
-export const TICKER = [
-  { k: 'Commits', v: fmt(SIGNAL.commits), d: 'up' },
+/** The tape under the hero. `s` is the live git stats (useSignal()). */
+export const ticker = (s) => [
+  { k: 'Commits', v: fmt(s.commits), d: 'up' },
   { k: 'PRs merged', v: '230+', d: 'up' },
-  { k: 'Repositories', v: String(SIGNAL.repos) },
+  { k: 'Repositories', v: String(s.repos) },
   { k: 'Endpoints in one API', v: '222' },
   { k: 'Automated tests', v: '1,300+', d: 'up' },
   { k: 'Live store apps', v: '2' },
-  { k: 'Active days', v: String(SIGNAL.activeDays) },
-  { k: 'Peak hour', v: `${String(SIGNAL.peakHour).padStart(2, '0')}:00 IST` },
-  { k: 'Best streak', v: `${SIGNAL.bestStreak} days` },
+  { k: 'Active days', v: String(s.activeDays) },
+  { k: 'Peak hour', v: `${String(s.peakHour).padStart(2, '0')}:00 IST` },
+  { k: 'Best streak', v: `${s.bestStreak} days` },
   { k: 'Status', v: 'Open to work', live: true },
 ]
 

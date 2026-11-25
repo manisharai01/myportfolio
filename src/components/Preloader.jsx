@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { markReady } from '../lib/boot'
-import { SIGNAL } from '../data/content'
+import { useSignal } from '../lib/signal'
 import './Preloader.css'
 
 /**
@@ -16,7 +16,7 @@ import './Preloader.css'
 const LOG = [
   { at: 4, t: '00.04', k: 'opening uplink', v: 'gurugram · in' },
   { at: 24, t: '00.31', k: 'handshake', v: 'socket open' },
-  { at: 46, t: '00.62', k: 'syncing commits', v: SIGNAL.commits.toLocaleString('en-IN') },
+  { at: 46, t: '00.62', k: 'syncing commits', v: (s) => s.commits.toLocaleString('en-IN') }, // live count
   { at: 68, t: '00.97', k: 'seating judges', v: 'E · H · C · M · B' },
   { at: 90, t: '01.28', k: 'all systems', v: 'nominal' },
 ]
@@ -47,6 +47,7 @@ export default function Preloader() {
   const [skip] = useState(shouldSkip)
   const [open, setOpen] = useState(!skip)
   const [lit, setLit] = useState(0)
+  const signal = useSignal()
   const rootRef = useRef(null)
   const canvasRef = useRef(null)
   const countRef = useRef(null)
@@ -339,7 +340,7 @@ export default function Preloader() {
                 <span className="boot__t">[{l.t}]</span>
                 <span>{l.k}</span>
                 <span className="boot__dots-line" />
-                <span className="boot__v">{l.v}</span>
+                <span className="boot__v">{typeof l.v === 'function' ? l.v(signal) : l.v}</span>
               </li>
             ))}
           </ul>
