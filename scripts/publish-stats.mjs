@@ -14,9 +14,10 @@
  *   npm run stats:publish                 collect + publish if changed
  *   npm run stats:publish -- --dry-run    collect + compare, push nothing
  *   npm run stats:publish -- --force      publish even if the commit count dropped a lot
+ *   node scripts/publish-stats.mjs --from <file>   publish a file collected elsewhere (cloud-stats.mjs)
  *
- * Runs hourly through Windows Task Scheduler (npm run stats:schedule).
- * Every run appends one line to .signal/refresh.log.
+ * Runs hourly on GitHub Actions (.github/workflows/stats.yml), or on your PC through
+ * Windows Task Scheduler (npm run stats:schedule). Every run appends one line to .signal/refresh.log.
  */
 import { execFileSync } from 'node:child_process'
 import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
@@ -32,6 +33,8 @@ const BRANCH = 'stats'
 const FILE = 'signal.json'
 const DRY = process.argv.includes('--dry-run')
 const FORCE = process.argv.includes('--force')
+const fromAt = process.argv.indexOf('--from')
+const FROM = fromAt >= 0 ? process.argv[fromAt + 1] : null
 
 mkdirSync(dir, { recursive: true })
 
@@ -58,21 +61,7 @@ const same = (a, b) => {
   return JSON.stringify(strip(a)) === JSON.stringify(strip(b))
 }
 
-// 1. collect
-try {
-  execFileSync(process.execPath, [join(here, 'collect-stats.mjs'), '--out', fresh, '--quiet'], {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-    timeout: 15 * 60_000,
-  })
-} catch (e) {
-  log(`collect failed: ${why(e)}`)
-  process.exit(1)
-}
-const next = JSON.parse(readFileSync(fresh, 'utf8'))
-const summary = `${next.commits.toLocaleString('en-IN')} commits · last ${next.last}`
-
-// 2. compare with what's published
+// 1. what's published now
 let parent = null
 let published = null
 try {
@@ -88,13 +77,38 @@ try {
   process.exit(1)
 }
 
+// Once GitHub Actions publishes, this PC's task stands down: two publishers would take turns
+// overwriting each other (this PC also counts commits you haven't pushed).
+if (!FROM && !FORCE && published?.source === 'github-actions') {
+  log('GitHub Actions publishes the stats now; nothing to do on this PC (remove this task: npm run stats:unschedule)')
+  process.exit(0)
+}
+
+// 2. collect (unless handed a file)
+const source = FROM ?? fresh
+if (!FROM) {
+  try {
+    execFileSync(process.execPath, [join(here, 'collect-stats.mjs'), '--out', fresh, '--quiet'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: 15 * 60_000,
+    })
+  } catch (e) {
+    log(`collect failed: ${why(e)}`)
+    process.exit(1)
+  }
+}
+const next = JSON.parse(readFileSync(source, 'utf8'))
+const summary = `${next.commits.toLocaleString('en-IN')} commits · last ${next.last}`
+
+// 3. compare, then publish if it changed
 if (published && same(published, next)) {
   log(`unchanged · ${summary}`)
   process.exit(0)
 }
-// A big drop usually means a repo folder moved or the config broke, not real history.
+// A big drop usually means a repo went missing or the config broke, not real history.
 if (published && next.commits < published.commits * 0.9 && !FORCE) {
-  log(`not published: commits fell from ${published.commits} to ${next.commits}. If that's expected, run: npm run stats:publish -- --force`)
+  log(`not published: commits fell from ${published.commits} to ${next.commits}. If that's expected, publish once with --force`)
   process.exit(1)
 }
 if (DRY) {
@@ -102,9 +116,9 @@ if (DRY) {
   process.exit(0)
 }
 
-// 3. commit just signal.json onto `stats`, without touching the working tree, and push
+// commit just signal.json onto `stats`, without touching the working tree, and push
 try {
-  const blob = git(['hash-object', '-w', '--no-filters', fresh])
+  const blob = git(['hash-object', '-w', '--no-filters', source])
   const tree = git(['mktree'], `100644 blob ${blob}\t${FILE}\n`)
   const commit = git(['commit-tree', tree, ...(parent ? ['-p', parent] : []), '-m', `signal: ${summary}`])
   git(['push', '--quiet', 'origin', `${commit}:refs/heads/${BRANCH}`])

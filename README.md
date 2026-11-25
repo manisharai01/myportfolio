@@ -65,7 +65,7 @@ All copy lives in **`src/data/content.js`**:
 | Experience | `JOURNEY` |
 | Skills | `TOOLBELT` |
 | Side projects | `LAB` |
-| Ticker | `TICKER` |
+| Ticker | `ticker` |
 
 Components only render it.
 
@@ -74,26 +74,60 @@ Components only render it.
 `signal.json` contains only aggregates: daily counts, hours, weekdays and language shares.
 No repository names, commit messages or paths are included.
 
-1. **Collect.** `scripts/collect-stats.mjs` runs read-only `git log` over the repos listed in
-   `scripts/stats.config.json`. That file is git-ignored; the script's header shows the format.
-2. **Publish.** `scripts/publish-stats.mjs` collects into `.signal/`. If the numbers changed, it
-   pushes just `signal.json` to the `stats` branch. It uses git plumbing, so your working tree and
-   `master` are never touched.
+1. **Collect.** Every hour, GitHub Actions (`.github/workflows/stats.yml`) reads your repos with
+   read-only `git log`. No PC has to be on.
+2. **Publish.** If the numbers changed, just `signal.json` is pushed to the `stats` branch.
 3. **Show.** On load, the page fetches `signal.json` from the `stats` branch and swaps it in if it
    is newer than the bundled copy (`src/lib/signal.js`). Offline, it keeps the bundled copy. Each
    Pages build also bakes in the latest published copy (`scripts/bake-stats.mjs`).
 
+### One-time setup
+
+1. **Create a token.** Open
+   [github.com/settings/tokens/new?scopes=repo](https://github.com/settings/tokens/new?scopes=repo&description=portfolio-git-stats)
+   (a classic token). Use the GitHub account that can see all your repos.
+   - Keep the `repo` scope; it's needed to read private repos.
+   - Pick an expiry. When it runs out, the job fails and emails you; make a new token and
+     replace the secret.
+   - If an organisation uses SSO, click **Configure SSO → Authorize** next to the new token.
+2. **Build the repo list.** On your PC, run `npm run stats:cloud-config`. It writes
+   `.signal/STATS_CONFIG.json`, which is git-ignored.
+3. **Add two secrets.** Go to
+   [Settings → Secrets and variables → Actions](https://github.com/manisharai01/myportfolio/settings/secrets/actions)
+   and click **New repository secret** for each:
+   - `STATS_TOKEN`: the token.
+   - `STATS_CONFIG`: the whole contents of `.signal/STATS_CONFIG.json`.
+4. **Run it once.** Open
+   [Actions → Refresh git stats](https://github.com/manisharai01/myportfolio/actions/workflows/stats.yml)
+   and click **Run workflow**. The first run clones everything (about 5 minutes); later runs take
+   1–2 minutes.
+
+Re-run step 2 and update `STATS_CONFIG` when you start working in a new repo.
+
+How the secret is used:
+- **No npm packages in the job.** The token is only used by a job that installs nothing from npm.
+- **The logs name repos only by number.** The repo is public, so its Actions logs are too.
+  `.signal/cloud-repos.txt` on your PC says which number is which.
+- **Commits GitHub can't see are carried in the secret as totals.** These are branches deleted on
+  GitHub, unpushed work and repos that aren't on GitHub, so the site matches what your PC counts.
+
+### On your PC
+
+The same pipeline can run on your PC. Once GitHub Actions publishes, the PC task stands down on its
+own.
+
 | Command | What it does |
 |---|---|
-| `npm run stats:schedule` | Publish hourly via Windows Task Scheduler, while you're logged in |
+| `npm run stats:cloud-config` | Build the `STATS_CONFIG` secret from the repos on this PC |
+| `npm run stats:schedule` | Publish hourly from this PC via Windows Task Scheduler |
 | `npm run stats:unschedule` | Remove that scheduled task |
-| `npm run stats:publish` | Publish now; add `-- --dry-run` to only compare |
+| `npm run stats:publish` | Publish from this PC now; add `-- --dry-run` to only compare |
 | `npm run stats` | Regenerate the bundled copy, `src/data/signal.json` |
 | `npm run stats:bake` | Copy the published stats into `src/data/signal.json` |
 
-Each scheduled run adds one line to `.signal/refresh.log`. If the commit count suddenly drops by
-more than 10% (say a repo folder moved), the publisher refuses and logs why;
-`npm run stats:publish -- --force` overrides it.
+The PC task logs each run to `.signal/refresh.log`. If the commit count suddenly drops by more than
+10%, publishing is refused, because that usually means a repo went missing. Run the publisher once
+with `--force` if the drop is real.
 
 ## Stack
 

@@ -10,7 +10,7 @@
  *
  *   node scripts/collect-stats.mjs                  → src/data/signal.json
  *   node scripts/collect-stats.mjs --out <file>     → anywhere else (publish-stats.mjs uses this)
- *   add --quiet to skip the summary
+ *   --config <file>  another config   --quiet  no summary   --strict  fail if any repo can't be read
  *
  * stats.config.json shape:
  * {
@@ -20,57 +20,35 @@
  *   "names": ["my-git-name"],
  *   "emails": ["me@example.com"]
  * }
+ * The GitHub Actions job (cloud-stats.mjs) passes a config with two more keys:
+ *   "repos": [{ "path": "/x.git", "name": "x", "kind": "work", "self": false }]   read these directly
+ *   "extra": { "repos": [["x", "work"]], "commits": [["<hash prefix>", "<author ISO date>", 0|1, repoIndex, { "Dart": 12 }]] }
+ *            commits only your PC has (branches deleted on GitHub, unpushed work), counted unless
+ *            the same commit turns up in a repo
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { authorArgs, discoverRepos, isMine, locByLang, LOG_FORMAT, parseLog, refsFor } from './stats-lib.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const argv = process.argv.slice(2)
 const outAt = argv.indexOf('--out')
 const OUT = outAt >= 0 && argv[outAt + 1] ? resolve(argv[outAt + 1]) : join(here, '..', 'src', 'data', 'signal.json')
 const QUIET = argv.includes('--quiet')
-const configPath = join(here, 'stats.config.json')
+const STRICT = argv.includes('--strict')
+const cfgAt = argv.indexOf('--config')
+const configPath = cfgAt >= 0 && argv[cfgAt + 1] ? resolve(argv[cfgAt + 1]) : join(here, 'stats.config.json')
 if (!existsSync(configPath)) {
-  console.error('Missing scripts/stats.config.json — see the header of this file.')
+  console.error(`Missing ${configPath} — see the header of this file.`)
   process.exit(1)
 }
 const cfg = JSON.parse(readFileSync(configPath, 'utf8'))
-const NAMES = new Set(cfg.names)
-const EMAILS = new Set(cfg.emails.map((e) => e.toLowerCase()))
-const EXCLUDE = new Set(cfg.exclude ?? [])
+const mine = isMine(cfg)
 const NO_LOC = new Set(cfg.excludeFromLoc ?? [])
-
-const LANG = {
-  dart: 'Dart', ts: 'TypeScript', tsx: 'TypeScript', mts: 'TypeScript', js: 'JavaScript', jsx: 'JavaScript',
-  mjs: 'JavaScript', cjs: 'JavaScript', py: 'Python', kt: 'Kotlin', kts: 'Kotlin', java: 'Java', swift: 'Swift',
-  css: 'CSS', scss: 'CSS', html: 'HTML', sql: 'SQL', prisma: 'SQL', rs: 'Rust', go: 'Go',
-}
-// NB: no bare `lib` here — Flutter keeps all of its source in lib/
-const SKIP_DIR = /(^|\/)(node_modules|dist|build|out|\.dart_tool|Pods|vendor|generated|coverage|\.next|site-packages|\.?venv)\//i
-const SKIP_FILE = /(\.g\.dart|\.freezed\.dart|\.min\.(js|css)|\.map|lock\.json|\.lock|-lock\.yaml|\.d\.ts)$/i
-
-// discover repositories: each top-level folder plus repos nested one or two levels down
-const repos = []
-const isDir = (p) => {
-  try { return statSync(p).isDirectory() } catch { return false }
-}
-const scan = (p, name, kind, depth) => {
-  if (existsSync(join(p, '.git'))) repos.push({ name, path: p, kind })
-  if (depth === 0) return
-  for (const sub of readdirSync(p)) {
-    if (sub === 'node_modules' || sub.startsWith('.')) continue
-    const sp = join(p, sub)
-    if (isDir(sp)) scan(sp, `${name}/${sub}`, kind, depth - 1)
-  }
-}
-for (const { dir, kind } of cfg.roots) {
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name)
-    if (!EXCLUDE.has(name) && isDir(p)) scan(p, name, kind, 2)
-  }
-}
+const SELF = resolve(here, '..').toLowerCase()
+const repos = [...(cfg.repos ?? []), ...discoverRepos(cfg)]
 
 const seen = new Set()
 const days = {}
@@ -81,59 +59,55 @@ const touched = { work: new Set(), personal: new Set() }
 let commits = 0, merges = 0, work = 0, outside = 0, weekend = 0, added = 0
 let first = null, last = null
 
-// Let git drop everyone else's commits before it diffs them (most of the run time on big
-// shared repos). Fixed, case-insensitive substrings of the raw identity (no mailmap, the
-// same identity %an/%ae report), so this only ever keeps a superset; the exact check below
-// still decides what counts.
-const MINE = ['--no-use-mailmap', '-i', '-F', ...[...cfg.names, ...cfg.emails].map((p) => `--author=${p}`)]
+function count({ hash, merge, iso, kind, name, loc }) {
+  seen.add(hash)
+  const day = iso.slice(0, 10)
+  const hr = parseInt(iso.slice(11, 13), 10) // author's local wall clock
+  const dow = (new Date(day + 'T00:00:00Z').getUTCDay() + 6) % 7
+  days[day] = (days[day] || 0) + 1
+  hours[hr]++
+  dows[dow]++
+  commits++
+  if (merge) merges++
+  if (kind === 'work') work++
+  touched[kind].add(name)
+  if (dow >= 5 || hr < 9 || hr >= 18) outside++
+  if (dow >= 5) weekend++
+  if (!first || day < first) first = day
+  if (!last || day > last) last = day
+  for (const [lang, n] of Object.entries(loc ?? {})) {
+    langs[lang] = (langs[lang] || 0) + n
+    if (kind === 'work') added += n
+  }
+}
 
-// This repo's `stats` branch holds publish-stats.mjs's own data commits. Counting them would
-// make every publish add a commit to the next one, forever.
-const SELF = resolve(here, '..').toLowerCase()
-const NOT_STATS = ['--exclude=stats', '--branches', '--exclude=*/stats', '--remotes']
-
-for (const r of repos) {
+for (const [i, r] of repos.entries()) {
   let out
-  const refs = resolve(r.path).toLowerCase() === SELF ? NOT_STATS : ['--branches', '--remotes']
   try {
-    // branches + remotes + tags: every real commit, merges included, but not stash entries
-    out = execFileSync('git', ['-C', r.path, 'log', ...refs, '--tags', ...MINE, '--format=@@@%H|%P|%an|%ae|%aI', '--numstat'], {
+    out = execFileSync('git', ['-C', r.path, 'log', ...refsFor(r.self || resolve(r.path).toLowerCase() === SELF), ...authorArgs(cfg), LOG_FORMAT, '--numstat'], {
       encoding: 'utf8',
       maxBuffer: 1024 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
     })
   } catch {
+    if (STRICT) {
+      console.error(`Couldn't read repo #${i + 1} (${r.kind}).`) // by number: this may run in public CI logs
+      process.exit(1)
+    }
     continue
   }
-  for (const block of out.split('@@@').slice(1)) {
-    const [head, ...lines] = block.split('\n')
-    const [hash, parents, an, ae = '', iso] = head.split('|')
-    if (!(NAMES.has(an) || EMAILS.has(ae.toLowerCase()))) continue
-    if (seen.has(hash)) continue
-    seen.add(hash)
-    const day = iso.slice(0, 10)
-    const hr = parseInt(iso.slice(11, 13), 10) // author's local wall clock
-    const dow = (new Date(day + 'T00:00:00Z').getUTCDay() + 6) % 7
-    days[day] = (days[day] || 0) + 1
-    hours[hr]++
-    dows[dow]++
-    commits++
-    const isMerge = parents.trim().split(' ').filter(Boolean).length > 1
-    if (isMerge) merges++
-    if (r.kind === 'work') work++
-    touched[r.kind].add(r.name)
-    if (dow >= 5 || hr < 9 || hr >= 18) outside++
-    if (dow >= 5) weekend++
-    if (!first || day < first) first = day
-    if (!last || day > last) last = day
-    if (NO_LOC.has(r.name)) continue
-    for (const ln of lines) {
-      const m = ln.match(/^(\d+)\t\d+\t(.+)$/)
-      if (!m || SKIP_DIR.test(m[2]) || SKIP_FILE.test(m[2])) continue
-      const lang = LANG[(m[2].split('.').pop() || '').toLowerCase()]
-      if (!lang) continue
-      langs[lang] = (langs[lang] || 0) + +m[1]
-      if (r.kind === 'work') added += +m[1]
-    }
+  for (const c of parseLog(out)) {
+    if (!mine(c.an, c.ae) || seen.has(c.hash)) continue
+    count({ ...c, kind: r.kind, name: r.name, loc: NO_LOC.has(r.name) ? null : locByLang(c.lines) })
+  }
+}
+
+if (cfg.extra?.commits?.length) {
+  const prefixes = new Set([...seen].map((h) => h.slice(0, 12)))
+  for (const [h, iso, merge, ri, loc] of cfg.extra.commits) {
+    if (prefixes.has(h)) continue
+    const [name, kind] = cfg.extra.repos[ri]
+    count({ hash: h, merge: !!merge, iso, kind, name, loc })
   }
 }
 

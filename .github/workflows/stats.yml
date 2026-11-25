@@ -1,0 +1,56 @@
+name: Refresh git stats
+
+# Hourly on GitHub's servers, so no PC has to be on: reads your repos with the STATS_TOKEN
+# secret and publishes signal.json to the `stats` branch, which the site fetches on every
+# visit. Setup: README → "Git stats".
+on:
+  schedule:
+    - cron: '17 * * * *' # GitHub may start scheduled runs a few minutes late
+  workflow_dispatch:
+
+permissions:
+  contents: write # push signal.json to the `stats` branch
+
+concurrency:
+  group: git-stats
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TZ: Asia/Kolkata # dates like "generated" in IST, as on your PC
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - id: day
+        run: echo "day=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      # blobless clones of your repos, kept between runs so each run only fetches what's new
+      - uses: actions/cache@v4
+        with:
+          path: ~/stats-repos
+          key: stats-repos-${{ steps.day.outputs.day }}
+          restore-keys: stats-repos-
+
+      # No npm install anywhere in this job, so no third-party package ever runs next to the token.
+      - name: Read your repos
+        id: read
+        env:
+          STATS_TOKEN: ${{ secrets.STATS_TOKEN }}
+          STATS_CONFIG: ${{ secrets.STATS_CONFIG }}
+        run: node scripts/cloud-stats.mjs
+
+      - name: Publish to the stats branch
+        if: steps.read.outputs.ready == 'true'
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: node scripts/publish-stats.mjs --from .signal/signal.json

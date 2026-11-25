@@ -10,6 +10,7 @@
     "stats": "node scripts/collect-stats.mjs",
     "stats:publish": "node scripts/publish-stats.mjs",
     "stats:bake": "node scripts/bake-stats.mjs",
+    "stats:cloud-config": "node scripts/cloud-config.mjs",
     "stats:schedule": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/schedule-stats.ps1",
     "stats:unschedule": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/schedule-stats.ps1 -Remove"
   },
