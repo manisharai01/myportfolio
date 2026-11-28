@@ -91,12 +91,16 @@ No repository names, commit messages or paths are included.
      replace the secret.
    - If an organisation uses SSO, click **Configure SSO → Authorize** next to the new token.
 2. **Build the repo list.** On your PC, run `npm run stats:cloud-config`. It writes
-   `.signal/STATS_CONFIG.json`, which is git-ignored.
+   `.signal/STATS_CONFIG.json` (git-ignored) and copies the same JSON to your clipboard. It's one
+   12,000-character line, so paste from the clipboard rather than selecting it in an editor.
 3. **Add two secrets.** Go to
    [Settings → Secrets and variables → Actions](https://github.com/manisharai01/myportfolio/settings/secrets/actions)
    and click **New repository secret** for each:
    - `STATS_TOKEN`: the token.
-   - `STATS_CONFIG`: the whole contents of `.signal/STATS_CONFIG.json`.
+   - `STATS_CONFIG`: paste from the clipboard (step 2).
+
+   If a run fails, its error says what's wrong (a paste cut off, the two secrets swapped, the token
+   expired) without printing anything private.
 4. **Run it once.** Open
    [Actions → Refresh git stats](https://github.com/manisharai01/myportfolio/actions/workflows/stats.yml)
    and click **Run workflow**. The first run clones everything (about 5 minutes); later runs take

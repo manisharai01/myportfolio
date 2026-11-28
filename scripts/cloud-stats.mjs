@@ -40,13 +40,31 @@ if ((!token && !LOCAL) || !raw) {
   console.log('::notice::Skipped: add the STATS_TOKEN and STATS_CONFIG repository secrets to turn this on (README → "Git stats").')
   process.exit(0)
 }
+// Forgive what a paste can add (BOM, spaces, wrapping quotes or a ``` fence) and explain anything
+// else without echoing a character of it: these logs are public.
+const REPASTE = 'Run `npm run stats:cloud-config` (it copies the JSON to your clipboard) and paste it into the STATS_CONFIG secret again.'
+const looksLikeToken = (v) => /^(ghp_|github_pat_|gho_|ghs_)/.test(v)
+const text = raw
+  .replace(/^﻿/, '')
+  .trim()
+  .replace(/^(```(json)?|["'`])\s*/, '')
+  .replace(/\s*(```|["'`])$/, '')
+if (token && token.trim().startsWith('{')) fail('STATS_TOKEN holds the JSON, so the two secrets were swapped. Put the token in STATS_TOKEN and the JSON in STATS_CONFIG.')
 let cfg
 try {
-  cfg = JSON.parse(raw)
+  cfg = JSON.parse(text)
 } catch {
-  fail("STATS_CONFIG isn't valid JSON. Paste the whole of .signal/STATS_CONFIG.json from `npm run stats:cloud-config`.")
+  const n = text.length.toLocaleString('en-US')
+  const why = looksLikeToken(text)
+    ? 'it holds a GitHub token, so the two secrets were swapped'
+    : !text.startsWith('{')
+      ? `it doesn't start with "{" (${n} characters), so it isn't the file's contents`
+      : !text.endsWith('}')
+        ? `it's ${n} characters and doesn't end with "}", so the copy was cut off (the file is about 12,000)`
+        : `it's ${n} characters but isn't valid JSON, so part of it was lost or edited`
+  fail(`STATS_CONFIG isn't the JSON from .signal/STATS_CONFIG.json: ${why}. ${REPASTE}`)
 }
-if (!Array.isArray(cfg.repos) || !cfg.repos.length || !cfg.names || !cfg.emails) fail('STATS_CONFIG is missing repos, names or emails.')
+if (!Array.isArray(cfg.repos) || !cfg.repos.length || !cfg.names || !cfg.emails) fail(`STATS_CONFIG is missing repos, names or emails. ${REPASTE}`)
 
 // hide everything private before anything else gets printed (only means something on Actions)
 const mask = (v) => {
@@ -58,7 +76,7 @@ for (const r of cfg.repos) [r.repo, ...r.repo.split('/'), r.name].forEach(mask)
 const env = { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never', GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'gc.auto', GIT_CONFIG_VALUE_0: '0' }
 if (token) {
   // the token travels as a header from the environment: never in a URL or on a command line
-  const auth = Buffer.from(`x-access-token:${token}`).toString('base64')
+  const auth = Buffer.from(`x-access-token:${token.trim()}`).toString('base64') // a pasted newline would break the login
   mask(auth)
   Object.assign(env, { GIT_CONFIG_COUNT: '2', GIT_CONFIG_KEY_1: 'http.https://github.com/.extraheader', GIT_CONFIG_VALUE_1: `AUTHORIZATION: basic ${auth}` })
 }
@@ -112,6 +130,9 @@ for (const [i, r] of cfg.repos.entries()) {
 }
 
 // Never publish numbers that silently leave a repo out.
+if (broken.length && broken.length === cfg.repos.length) {
+  fail("The token couldn't read any repo. Check STATS_TOKEN: it may be expired, missing the `repo` scope, cut off when pasted, or not authorized for your organisation's SSO.")
+}
 if (broken.length) {
   fail(`Couldn't clone ${broken.join(', ')}. Give the token access (or authorize it for the org's SSO), or remove that entry from STATS_CONFIG. .signal/cloud-repos.txt on your PC lists the numbers.`)
 }

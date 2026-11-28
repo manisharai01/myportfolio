@@ -39,7 +39,7 @@ const git = (cwd, args, input) => {
       input,
       maxBuffer: 1 << 30,
       timeout: 120_000,
-      env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' },
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' }, // a stale GitHub login may show its normal sign-in window
       stdio: ['pipe', 'pipe', 'ignore'],
     })
   } catch {
@@ -66,7 +66,7 @@ const extraRepos = []
 const extra = []
 const counted = new Set() // every commit, once
 let total = 0
-let warned = 0
+let unchecked = 0
 
 for (const r of discoverRepos(cfg)) {
   const self = resolve(r.path).toLowerCase() === SELF
@@ -84,12 +84,12 @@ for (const r of discoverRepos(cfg)) {
       .split('\n')
       .filter((b) => b && b !== 'HEAD' && !(self && b === 'stats'))
     const ls = git(r.path, ['ls-remote', '--heads', remote])
-    let live = local
-    if (ls === null) warned++ // offline or no access: assume the branches are all still there
-    else {
-      const there = new Set(ls.split('\n').filter(Boolean).map((l) => l.split('\trefs/heads/')[1]))
-      live = local.filter((b) => there.has(b))
+    if (ls === null) {
+      unchecked++ // can't tell which branches GitHub still has, so the totals would be wrong
+      continue
     }
+    const there = new Set(ls.split('\n').filter(Boolean).map((l) => l.split('\trefs/heads/')[1]))
+    const live = local.filter((b) => there.has(b))
     const hits = reachable(r.path, live.map((b) => `refs/remotes/${remote}/${b}`))
     if (!hits.size) continue // e.g. an upstream you only pull from
     hits.forEach((h) => onGitHub.add(h))
@@ -110,6 +110,14 @@ for (const r of discoverRepos(cfg)) {
   }
 }
 
+if (unchecked) {
+  console.error(
+    `Couldn't reach GitHub for ${unchecked} repo(s), so nothing was written (your last STATS_CONFIG.json is untouched).\n` +
+      'Usually git just needs you to sign in again: run `git fetch` in one of your work repos, then run this again.'
+  )
+  process.exit(1)
+}
+
 const dir = join(root, '.signal')
 mkdirSync(dir, { recursive: true })
 const secret = { repos: out, names: cfg.names, emails: cfg.emails, excludeFromLoc: cfg.excludeFromLoc ?? [], extra: { repos: extraRepos, commits: extra } }
@@ -121,8 +129,23 @@ writeFileSync(
 )
 
 console.log(`${out.length} GitHub repos to read · ${total.toLocaleString('en-IN')} commits of yours, ${extra.length} of them carried in the secret (not on GitHub)`)
-if (warned) console.log(`(${warned} remote(s) couldn't be checked, so their branches were assumed to still exist)`)
 console.log(`Secret size: ${(json.length / 1024).toFixed(1)} KB of GitHub's 48 KB limit`)
 if (json.length > 48_000) console.log('Too big for one secret: remove repos you no longer want counted from scripts/stats.config.json.')
-console.log(`Paste the whole of ${join(dir, 'STATS_CONFIG.json')} into the STATS_CONFIG secret.`)
+// Also put it on the clipboard: selecting a 12,000-character line by hand is how pastes get cut off.
+let copied = false
+try {
+  if (process.platform === 'win32') {
+    const ps = '[Console]::InputEncoding = [Text.Encoding]::UTF8; Set-Clipboard -Value ([Console]::In.ReadToEnd())'
+    execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', ps], { input: json, stdio: ['pipe', 'ignore', 'ignore'], timeout: 30_000 })
+    copied = true
+  } else if (process.platform === 'darwin') {
+    execFileSync('pbcopy', [], { input: json, timeout: 30_000 })
+    copied = true
+  }
+} catch {}
+console.log(
+  copied
+    ? `Copied to your clipboard (${json.length.toLocaleString('en-US')} characters): paste it into the STATS_CONFIG secret.`
+    : `Paste the whole of ${join(dir, 'STATS_CONFIG.json')} into the STATS_CONFIG secret.`
+)
 console.log(`Repo numbers (Actions logs use them): ${join(dir, 'cloud-repos.txt')}`)

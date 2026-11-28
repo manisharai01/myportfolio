@@ -22,17 +22,18 @@ jobs:
     env:
       TZ: Asia/Kolkata # dates like "generated" in IST, as on your PC
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
+          package-manager-cache: false # nothing to install here
 
       - id: day
         run: echo "day=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
       # blobless clones of your repos, kept between runs so each run only fetches what's new
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/stats-repos
           key: stats-repos-${{ steps.day.outputs.day }}
